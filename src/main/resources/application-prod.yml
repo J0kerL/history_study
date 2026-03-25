@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    url: ${HISTORY_DB_URL:jdbc:mysql://127.0.0.1:3306/history?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${HISTORY_DB_USERNAME:root}
+    password: ${HISTORY_DB_PASSWORD:123456}
+    hikari:
+      # 生产环境提升连接池容量以支撑并发访问。
+      minimum-idle: 10
+      maximum-pool-size: 30
+  data:
+    redis:
+      host: ${HISTORY_REDIS_HOST:127.0.0.1}
+      port: ${HISTORY_REDIS_PORT:6379}
+      password: ${HISTORY_REDIS_PASSWORD:123456}
+
+mybatis:
+  configuration:
+    # 生产环境关闭标准输出 SQL，避免日志膨胀。
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+logging:
+  level:
+    root: INFO
+    com.history: INFO
+    org.springframework.web: WARN
+    org.mybatis: WARN
+  logback:
+    rollingpolicy:
+      # 生产环境日志滚动策略。
+      max-file-size: 100MB
+      max-history: 30
+      total-size-cap: 3GB
+
+knife4j:
+  basic:
+    # 生产环境开启
+    enable: true
+    # 访问用户名
+    username: admin
+    # 访问密码
+    password: 123456

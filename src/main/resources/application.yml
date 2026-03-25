@@ -1,0 +1,93 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: history
+  profiles:
+    active: dev
+  jackson:
+    # 统一时区与日期格式，避免日期型字段在接口层出现偏差。
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      # 连接池基础配置。
+      pool-name: HistoryHikariPool
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      validation-timeout: 5000
+      auto-commit: true
+      connection-test-query: SELECT 1
+  data:
+    redis:
+      timeout: 3s
+      connect-timeout: 3s
+      database: 0
+      # lettuce连接池配置（优化连接性能，避免连接泄露）
+      lettuce:
+        pool:
+          # 连接池最大活跃数（最大连接数）
+          max-active: 16
+          # 连接池最大空闲数
+          max-idle: 8
+          # 连接池最大等待时间（单位：毫秒，-1表示无限制）
+          max-wait: 3s
+
+mybatis:
+  # Mapper XML 扫描路径，后续新增 XML 时无需再改配置。
+  mapper-locations: classpath*:mapper/**/*.xml
+  # 实体类别名包路径。
+  type-aliases-package: com.history.model.entity
+  configuration:
+    # 下划线字段自动映射到驼峰属性。
+    map-underscore-to-camel-case: true
+    # 打印 SQL 前缀日志，开发排查更直观；生产日志级别会单独收敛。
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    jdbc-type-for-null: 'NULL'
+    default-fetch-size: 100
+    default-statement-timeout: 10
+
+# http://localhost:8080/api/doc.html、http://localhost:8080/api/swagger-ui.html
+knife4j:
+  # 开启增强模式
+  enable: true
+  setting:
+    # 中文界面
+    language: zh-CN
+    # 显示数据模型
+    enable-swagger-models: true
+    # 文档管理
+    enable-document-manage: true
+    # 在线调试
+    enable-debug: true
+
+# Sa-Token核心配置（重点，双Token相关配置）
+sa-token:
+  # 1. 基础配置
+  # Token在请求头中的名称（默认satoken，可自定义，比如Authorization）
+  token-name: Authorization
+  # Token前缀（默认为空，可自定义，比如Bearer）
+  token-prefix: Bearer
+  # Token生成风格（uuid更安全，可选：uuid、simple-uuid、random-32等）
+  token-style: uuid
+  # 是否允许同一账号多地同时登录（true允许，false新登录挤掉旧登录）
+  is-concurrent: true
+  
+  # 2. 双Token配置（核心中的核心）
+  # AccessToken有效期，单位：秒（30分钟，可自定义）
+  timeout: 1800
+  # RefreshToken有效期，单位：秒（7天，可自定义）
+  refresh-token-timeout: 604800
+  # 是否同一账号只生成一个RefreshToken（true更安全，避免多刷新令牌泄露）
+  refresh-token-single: true

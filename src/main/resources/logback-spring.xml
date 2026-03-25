@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+    <!-- 定义日志存放目录 -->
+    <property name="LOG_PATH" value="logs"/>
+    <property name="APP_NAME" value="history"/>
+
+    <!-- 彩色日志依赖的渲染类 -->
+    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
+    <conversionRule conversionWord="wex"
+                    converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter"/>
+    <conversionRule conversionWord="wEx"
+                    converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter"/>
+
+    <!-- 彩色日志格式 -->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="${CONSOLE_LOG_PATTERN:-%clr(%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
+
+    <!-- 文件日志格式（不带颜色） -->
+    <property name="FILE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"/>
+
+    <!-- 控制台输出（彩色） -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 所有日志文件（INFO及以上级别） -->
+    <appender name="FILE_ALL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 当前日志文件路径 -->
+        <file>${LOG_PATH}/${APP_NAME}.log</file>
+        <!-- 日志输出格式 -->
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <!-- 滚动策略：基于时间和大小的滚动 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 日志文件名格式：按日期滚动 -->
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- 日志保存1天 -->
+            <maxHistory>1</maxHistory>
+            <!-- 单个日志文件最大50MB -->
+            <maxFileSize>50MB</maxFileSize>
+            <!-- 日志文件总大小上限 -->
+            <totalSizeCap>200MB</totalSizeCap>
+            <!-- 启动时清理过期日志 -->
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+    </appender>
+
+    <!-- 错误日志文件（ERROR级别） -->
+    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}-error.log</file>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <!-- 只记录ERROR级别 -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}-error.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxHistory>1</maxHistory>
+            <maxFileSize>20MB</maxFileSize>
+            <totalSizeCap>50MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+    </appender>
+
+    <!-- 开发环境配置 -->
+    <springProfile name="dev">
+        <!-- 开发环境：打印彩色日志到控制台，DEBUG级别 -->
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE_ALL"/>
+            <appender-ref ref="FILE_ERROR"/>
+        </root>
+        <!-- 项目代码使用DEBUG级别 -->
+        <logger name="com.history" level="DEBUG" additivity="true"/>
+        <!-- SQL日志 -->
+        <logger name="com.history.mapper" level="DEBUG"/>
+    </springProfile>
+
+    <!-- 生产环境配置 -->
+    <springProfile name="prod">
+        <!-- 生产环境：INFO级别，不输出到控制台 -->
+        <root level="INFO">
+            <appender-ref ref="FILE_ALL"/>
+            <appender-ref ref="FILE_ERROR"/>
+        </root>
+        <!-- 项目代码使用INFO级别 -->
+        <logger name="com.history" level="INFO"/>
+    </springProfile>
+
+    <!-- 默认配置（未指定profile时生效） -->
+    <springProfile name="!dev &amp; !prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE_ALL"/>
+            <appender-ref ref="FILE_ERROR"/>
+        </root>
+    </springProfile>
+</configuration>
