@@ -41,4 +41,7 @@ public interface UserMapper {
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(User user);
+
+    @Select("select * from t_user where id = #{id}")
+    User getCurrentUserInfo(long id);
 }
