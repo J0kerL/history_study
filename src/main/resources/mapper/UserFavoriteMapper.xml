@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.history.mapper.UserFavoriteMapper">
+
+    <!--
+        查询用户的收藏列表（分页）。
+        使用 UNION ALL 合并事件和人物的收藏，避免复杂的 CASE WHEN。
+        PageHelper 会自动添加 LIMIT 和 OFFSET。
+    -->
+    <select id="selectFavoritesByUserId" resultType="com.history.model.vo.FavoriteVO">
+        <choose>
+            <when test="type == null">
+                SELECT
+                    uf.id,
+                    uf.type,
+                    uf.ref_id AS refId,
+                    e.title AS refTitle,
+                    e.image_url AS refImage,
+                    e.summary AS refSummary
+                FROM t_user_favorite uf
+                INNER JOIN t_event e ON uf.ref_id = e.id AND uf.type = 1
+                WHERE uf.user_id = #{userId}
+                  AND uf.type = 1
+
+                UNION ALL
+
+                SELECT
+                    uf.id,
+                    uf.type,
+                    uf.ref_id AS refId,
+                    f.name AS refTitle,
+                    f.image_url AS refImage,
+                    f.subtitle AS refSummary
+                FROM t_user_favorite uf
+                INNER JOIN t_figure f ON uf.ref_id = f.id AND uf.type = 2
+                WHERE uf.user_id = #{userId}
+                  AND uf.type = 2
+            </when>
+            <when test="type == 1">
+                SELECT
+                    uf.id,
+                    uf.type,
+                    uf.ref_id AS refId,
+                    e.title AS refTitle,
+                    e.image_url AS refImage,
+                    e.summary AS refSummary
+                FROM t_user_favorite uf
+                INNER JOIN t_event e ON uf.ref_id = e.id AND uf.type = 1
+                WHERE uf.user_id = #{userId}
+                  AND uf.type = 1
+            </when>
+            <when test="type == 2">
+                SELECT
+                    uf.id,
+                    uf.type,
+                    uf.ref_id AS refId,
+                    f.name AS refTitle,
+                    f.image_url AS refImage,
+                    f.subtitle AS refSummary
+                FROM t_user_favorite uf
+                INNER JOIN t_figure f ON uf.ref_id = f.id AND uf.type = 2
+                WHERE uf.user_id = #{userId}
+                  AND uf.type = 2
+            </when>
+            <otherwise>
+                <!-- 非法 type：返回空结果（理想情况下由 DTO 校验拦截） -->
+                SELECT
+                    uf.id,
+                    uf.type,
+                    uf.ref_id AS refId,
+                    CAST(NULL AS CHAR) AS refTitle,
+                    CAST(NULL AS CHAR) AS refImage,
+                    CAST(NULL AS CHAR) AS refSummary
+                FROM t_user_favorite uf
+                WHERE uf.user_id = #{userId}
+                  AND 1 = 0
+            </otherwise>
+        </choose>
+        ORDER BY id DESC
+    </select>
+</mapper>

@@ -1,9 +1,13 @@
 package com.history.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.history.common.PageResult;
 import com.history.common.Result;
+import com.history.model.dto.FavoriteQueryDTO;
 import com.history.model.dto.UpdateUserProfileDTO;
 import com.history.model.entity.User;
+import com.history.model.vo.FavoriteVO;
+import com.history.service.FavoriteService;
 import com.history.service.OssService;
 import com.history.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +33,9 @@ public class UserController {
 
     @Resource
     private OssService ossService;
+
+    @Resource
+    private FavoriteService favoriteService;
 
     @GetMapping("/current")
     @Operation(summary = "获取当前登录用户信息", description = "获取当前登录用户信息")
@@ -64,5 +71,13 @@ public class UserController {
         long id = StpUtil.getLoginIdAsLong();
         List<String> achievements = userService.listAchievements(id);
         return Result.success(achievements);
+    }
+
+    @GetMapping("/favorites")
+    @Operation(summary = "获取用户收藏列表", description = "分页查询当前登录用户的收藏列表，支持按收藏类型筛选")
+    public Result<PageResult<FavoriteVO>> listFavorites(@Valid FavoriteQueryDTO queryDTO) {
+        long id = StpUtil.getLoginIdAsLong();
+        PageResult<FavoriteVO> favorites = favoriteService.listFavorites(id, queryDTO);
+        return Result.success(favorites);
     }
 }
