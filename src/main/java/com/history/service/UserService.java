@@ -3,13 +3,18 @@ package com.history.service;
 import com.history.model.dto.UpdateUserProfileDTO;
 import com.history.model.entity.User;
 
-import java.util.List;
-
 /**
  * @Author Diamond
  * @Create 2026/3/25
  */
 public interface UserService {
+
+    /**
+     * 获取当前登录用户信息。
+     *
+     * @param id 用户 ID
+     * @return 用户信息
+     */
     User getCurrentUserInfo(long id);
 
     User update(long id, UpdateUserProfileDTO updateProfileDTO);
@@ -22,6 +27,4 @@ public interface UserService {
      * @return 更新后的用户信息
      */
     User updateAvatar(long userId, String avatarUrl);
-
-    List<String> listAchievements(long id);
 }

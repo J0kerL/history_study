@@ -3,10 +3,13 @@ package com.history.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.history.common.PageResult;
 import com.history.common.Result;
+import com.history.model.dto.AchievementQueryDTO;
 import com.history.model.dto.FavoriteQueryDTO;
 import com.history.model.dto.UpdateUserProfileDTO;
+import com.history.model.entity.Achievement;
 import com.history.model.entity.User;
 import com.history.model.vo.FavoriteVO;
+import com.history.service.AchievementService;
 import com.history.service.FavoriteService;
 import com.history.service.OssService;
 import com.history.service.UserService;
@@ -16,8 +19,6 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 /**
  * @Author Diamond
@@ -36,6 +37,9 @@ public class UserController {
 
     @Resource
     private FavoriteService favoriteService;
+
+    @Resource
+    private AchievementService achievementService;
 
     @GetMapping("/current")
     @Operation(summary = "获取当前登录用户信息", description = "获取当前登录用户信息")
@@ -66,11 +70,11 @@ public class UserController {
     }
 
     @GetMapping("/achievements")
-    @Operation(summary = "获取用户成就列表", description = "获取用户成就列表")
-    public Result<List<String>> listAchievements() {
+    @Operation(summary = "获取用户成就列表", description = "分页查询当前登录用户的成就列表")
+    public Result<PageResult<Achievement>> listAchievements(@Valid AchievementQueryDTO queryDTO) {
         long id = StpUtil.getLoginIdAsLong();
-        List<String> achievements = userService.listAchievements(id);
-        return Result.success(achievements);
+        PageResult<Achievement> pageResult = achievementService.listAchievements(id, queryDTO);
+        return Result.success(pageResult);
     }
 
     @GetMapping("/favorites")
