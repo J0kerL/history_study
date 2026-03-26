@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 1. namespace 必须指向你的 Mapper 接口的全限定名 -->
+<mapper namespace="com.history.mapper.AchievementMapper">
+
+    <!-- 2. ResultMap: 处理数据库下划线与 Java 驼峰命名的映射 -->
+    <resultMap id="BaseResultMap" type="com.history.model.entity.Achievement">
+        <!-- id 标签用于主键 -->
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <!-- result 标签用于普通字段 -->
+        <result column="code" property="code" jdbcType="VARCHAR"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="icon_url" property="iconUrl" jdbcType="VARCHAR"/>
+        <result column="condition_type" property="conditionType" jdbcType="TINYINT"/>
+        <result column="condition_value" property="conditionValue" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- 根据id查询成就详情 -->
+    <select id="selectById" resultType="com.history.model.entity.Achievement">
+        select *
+        from achievement
+        where id = #{achievementId}
+    </select>
+
+    <!-- 批量根据 id 查询成就定义 -->
+    <select id="selectByIds" resultMap="BaseResultMap">
+        select *
+        from achievement
+        where id in
+        <foreach collection="achievementIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+</mapper>

@@ -13,6 +13,8 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 /**
  * @Author Diamond
  * @Create 2026/3/25
@@ -54,5 +56,13 @@ public class UserController {
         // 将 URL 保存到数据库，并返回更新后的用户信息
         User user = userService.updateAvatar(id, avatarUrl);
         return Result.success(user);
+    }
+
+    @GetMapping("/achievements")
+    @Operation(summary = "获取用户成就列表", description = "获取用户成就列表")
+    public Result<List<String>> listAchievements() {
+        long id = StpUtil.getLoginIdAsLong();
+        List<String> achievements = userService.listAchievements(id);
+        return Result.success(achievements);
     }
 }
