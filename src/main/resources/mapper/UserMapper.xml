@@ -21,10 +21,17 @@
             <if test="dto.phone != null and dto.phone != ''">
                 phone = #{dto.phone},
             </if>
-            <if test="dto.avatar != null and dto.avatar != ''">
-                avatar = #{dto.avatar},
-            </if>
         </set>
+        WHERE id = #{id}
+    </update>
+
+    <!--
+        更新用户头像地址，由 POST /user/avatar 接口调用。
+        avatarUrl 为 OSS 返回的完整访问 URL。
+    -->
+    <update id="updateAvatar">
+        UPDATE t_user
+        SET avatar = #{avatarUrl}
         WHERE id = #{id}
     </update>
 </mapper>

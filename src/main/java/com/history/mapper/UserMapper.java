@@ -60,4 +60,12 @@ public interface UserMapper {
      * @param updateProfileDTO 待更新字段（仅非空字段生效，password 须已完成 BCrypt 加密）
      */
     void update(@Param("id") Long id, @Param("dto") UpdateUserProfileDTO updateProfileDTO);
+
+    /**
+     * 更新用户头像地址。
+     *
+     * @param id        用户主键
+     * @param avatarUrl OSS 头像访问 URL
+     */
+    void updateAvatar(@Param("id") long id, @Param("avatarUrl") String avatarUrl);
 }

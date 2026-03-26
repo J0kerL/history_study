@@ -42,8 +42,7 @@ public class UserServiceImpl implements UserService {
         // 1. 判断是否至少填写了一个字段，防止无意义的空更新
         if (StrUtil.isBlank(updateProfileDTO.getUsername())
                 && StrUtil.isBlank(updateProfileDTO.getPassword())
-                && StrUtil.isBlank(updateProfileDTO.getPhone())
-                && StrUtil.isBlank(updateProfileDTO.getAvatar())) {
+                && StrUtil.isBlank(updateProfileDTO.getPhone())) {
             throw new BusinessException("请至少填写一项需要更新的内容");
         }
 
@@ -75,7 +74,7 @@ public class UserServiceImpl implements UserService {
             updateProfileDTO.setPassword(BCrypt.hashpw(updateProfileDTO.getPassword()));
         }
 
-        // 6. 执行动态更新，同时捕获数据库层唐偈键异常（居安并发注册导致的唯一性冲突）
+        // 6. 执行动态更新，同时捕获数据库层唯一键异常（并发操作导致的唯一性冲突）
         try {
             userMapper.update(id, updateProfileDTO);
         } catch (DuplicateKeyException e) {
@@ -84,5 +83,18 @@ public class UserServiceImpl implements UserService {
 
         // 7. 返回更新后的用户信息
         return userMapper.selectById(id);
+    }
+
+    /**
+     * 更新用户头像地址。
+     *
+     * @param userId    当前登录用户 ID
+     * @param avatarUrl OSS 返回的头像访问 URL
+     * @return 更新后的用户信息
+     */
+    @Override
+    public User updateAvatar(long userId, String avatarUrl) {
+        userMapper.updateAvatar(userId, avatarUrl);
+        return userMapper.selectById(userId);
     }
 }

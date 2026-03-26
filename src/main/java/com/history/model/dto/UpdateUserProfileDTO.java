@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 /**
  * 更新用户个人信息请求参数。
  * 所有字段均为可选项，只有填写的字段才会被更新。
+ * 注意：头像更新请使用 POST /user/avatar 接口上传图片文件。
  *
  * @author Diamond
  */
@@ -36,9 +37,4 @@ public class UpdateUserProfileDTO {
     @Pattern(regexp = "^\\d{11}$", message = "手机号格式不正确")
     @Schema(description = "手机号")
     private String phone;
-
-    /** 头像地址：最长 500 个字符，留空表示不修改。 */
-    @Size(max = 500, message = "头像地址过长")
-    @Schema(description = "头像")
-    private String avatar;
 }

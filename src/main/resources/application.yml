@@ -91,3 +91,26 @@ sa-token:
   refresh-token-timeout: 604800
   # 是否同一账号只生成一个RefreshToken（true更安全，避免多刷新令牌泄露）
   refresh-token-single: true
+
+# 阿里云 OSS 配置
+oss:
+  # OSS 服务节点
+  endpoint: oss-cn-beijing.aliyuncs.com
+  # AccessKey ID
+  access-key-id: YOUR_ACCESS_KEY_ID
+  # AccessKey Secret
+  access-key-secret: YOUR_ACCESS_KEY_SECRET
+  # Bucket 名称
+  bucket-name: history-study
+  # 文件访问地址前缀
+  url-prefix: https://history-study.oss-cn-beijing.aliyuncs.com
+  # 头像在 Bucket 中的目录前缀
+  avatar-dir: avatar
+  # 单文件大小上限，单位：MB
+  max-file-size: 5
+  # 允许上传的图片 MIME 类型
+  allowed-content-types:
+    - image/jpeg
+    - image/png
+    - image/gif
+    - image/webp

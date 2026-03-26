@@ -4,12 +4,14 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.history.common.Result;
 import com.history.model.dto.UpdateUserProfileDTO;
 import com.history.model.entity.User;
+import com.history.service.OssService;
 import com.history.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * @Author Diamond
@@ -23,6 +25,9 @@ public class UserController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private OssService ossService;
+
     @GetMapping("/current")
     @Operation(summary = "获取当前登录用户信息", description = "获取当前登录用户信息")
     public Result<User> getCurrentUserInfo() {
@@ -33,10 +38,21 @@ public class UserController {
     }
 
     @PutMapping("/profile")
-    @Operation(summary = "更新用户个人信息", description = "动态更新用户名、密码、手机号、头像，仅填写的字段生效")
+    @Operation(summary = "更新用户个人信息", description = "动态更新用户名、密码、手机号，仅填写的字段生效。如需修改头像请使用 POST /user/avatar 接口")
     public Result<User> update(@Valid @RequestBody UpdateUserProfileDTO updateProfileDTO) {
         long id = StpUtil.getLoginIdAsLong();
         User user = userService.update(id, updateProfileDTO);
+        return Result.success(user);
+    }
+
+    @PostMapping("/avatar")
+    @Operation(summary = "上传头像", description = "将图片文件上传至阿里云 OSS，自动更新用户头像地址。支持 JPG、PNG、GIF、WEBP 格式，最大 5 MB")
+    public Result<User> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        long id = StpUtil.getLoginIdAsLong();
+        // 上传图片到 OSS，得到访问 URL
+        String avatarUrl = ossService.uploadAvatar(id, file);
+        // 将 URL 保存到数据库，并返回更新后的用户信息
+        User user = userService.updateAvatar(id, avatarUrl);
         return Result.success(user);
     }
 }
