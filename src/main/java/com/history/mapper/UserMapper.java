@@ -1,8 +1,10 @@
 package com.history.mapper;
 
+import com.history.model.dto.UpdateUserProfileDTO;
 import com.history.model.entity.User;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 /**
@@ -21,6 +23,7 @@ public interface UserMapper {
                 username,
                 password,
                 phone,
+                avatar,
                 register_date,
                 streak_days,
                 max_streak_days,
@@ -31,6 +34,7 @@ public interface UserMapper {
                 #{username},
                 #{password},
                 #{phone},
+                #{avatar},
                 #{registerDate},
                 #{streakDays},
                 #{maxStreakDays},
@@ -44,4 +48,16 @@ public interface UserMapper {
 
     @Select("select * from t_user where id = #{id}")
     User getCurrentUserInfo(long id);
+
+    @Select("select * from t_user where id = #{id}")
+    User selectById(long id);
+
+
+    /**
+     * 动态更新用户信息。
+     *
+     * @param id              用户主键
+     * @param updateProfileDTO 待更新字段（仅非空字段生效，password 须已完成 BCrypt 加密）
+     */
+    void update(@Param("id") Long id, @Param("dto") UpdateUserProfileDTO updateProfileDTO);
 }

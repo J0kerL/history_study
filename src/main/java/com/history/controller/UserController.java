@@ -2,14 +2,14 @@ package com.history.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.history.common.Result;
+import com.history.model.dto.UpdateUserProfileDTO;
 import com.history.model.entity.User;
 import com.history.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @Author Diamond
@@ -32,4 +32,11 @@ public class UserController {
         return Result.success(user);
     }
 
+    @PutMapping("/profile")
+    @Operation(summary = "更新用户个人信息", description = "动态更新用户名、密码、手机号、头像，仅填写的字段生效")
+    public Result<User> update(@Valid @RequestBody UpdateUserProfileDTO updateProfileDTO) {
+        long id = StpUtil.getLoginIdAsLong();
+        User user = userService.update(id, updateProfileDTO);
+        return Result.success(user);
+    }
 }

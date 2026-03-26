@@ -2,6 +2,8 @@ package com.history.model.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -14,10 +16,12 @@ import lombok.Data;
 public class RegisterDTO {
 
     @NotBlank(message = "用户名不能为空")
+    @Size(min = 1, max = 20, message = "用户名长度应在 1～20 个字符之间")
     @Schema(description = "用户名", example = "history_user")
     private String username;
 
     @NotBlank(message = "密码不能为空")
+    @Size(min = 6, max = 20, message = "密码长度应在 6～20 个字符之间")
     @Schema(description = "密码", example = "123456")
     private String password;
 
@@ -26,6 +30,7 @@ public class RegisterDTO {
     private String confirmPassword;
 
     @NotBlank(message = "手机号不能为空")
+    @Pattern(regexp = "^\\d{11}$", message = "手机号格式不正确")
     @Schema(description = "手机号", example = "13800138000")
     private String phone;
 

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.history.mapper.UserMapper">
+    <!--
+        动态更新用户信息：只更新前端传入的非空字段（动态 SET）。
+        参数说明：
+          id  - 来自 @Param("id") 的用户主键
+          dto - 来自 @Param("dto") 的 UpdateUserProfileDTO，其中 password 已在 Service 层完成 BCrypt 加密
+    -->
+    <update id="update">
+        UPDATE t_user
+        <set>
+            <if test="dto.username != null and dto.username != ''">
+                username = #{dto.username},
+            </if>
+            <!-- password 已在 Service 层经过 BCrypt 加密后传入 -->
+            <if test="dto.password != null and dto.password != ''">
+                password = #{dto.password},
+            </if>
+            <if test="dto.phone != null and dto.phone != ''">
+                phone = #{dto.phone},
+            </if>
+            <if test="dto.avatar != null and dto.avatar != ''">
+                avatar = #{dto.avatar},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+</mapper>
