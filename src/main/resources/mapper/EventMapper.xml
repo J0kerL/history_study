@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.history.mapper.EventMapper">
+
+    <resultMap id="BaseResultMap" type="com.history.model.entity.Event">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="year" property="year"/>
+        <result column="month" property="month"/>
+        <result column="day" property="day"/>
+        <result column="summary" property="summary"/>
+        <result column="content" property="content"/>
+        <result column="image_url" property="imageUrl"/>
+        <result column="tags" property="tags"/>
+        <result column="source" property="source"/>
+    </resultMap>
+
+    <!--
+        根据月份和日期查询历史事件（跨年份）
+        例如：查询4月27日发生的所有历史事件，按年份升序排列
+    -->
+    <select id="selectByMonthDay" resultMap="BaseResultMap">
+        SELECT id, title, year, month, day, summary, content, image_url, tags, source
+        FROM t_event
+        WHERE month = #{month}
+          AND day = #{day}
+        ORDER BY year ASC
+    </select>
+
+</mapper>

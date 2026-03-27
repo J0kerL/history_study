@@ -49,12 +49,6 @@ public class Event implements Serializable {
     @Schema(description = "标签")
     private String tags;
 
-    @Schema(description = "浏览次数")
-    private Integer viewCount;
-
-    @Schema(description = "状态：0-下线，1-正常")
-    private Byte status;
-
     @Schema(description = "数据来源：1-人工录入，2-AI生成")
     private Byte source;
 }
