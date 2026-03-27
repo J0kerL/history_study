@@ -22,6 +22,8 @@ logging:
   level:
     root: INFO
     com.history: INFO
+    # 生产环境关闭 HTTP 请求进出日志，避免高并发下日志膨胀
+    com.history.config.RequestLoggingInterceptor: WARN
     org.springframework.web: WARN
     org.mybatis: WARN
   logback:

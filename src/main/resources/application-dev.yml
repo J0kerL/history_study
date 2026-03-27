@@ -11,8 +11,8 @@ spring:
 
 mybatis:
   configuration:
-    # 开发环境打开标准输出 SQL，便于调试 Mapper 行为。
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 使用 Slf4jImpl 将 SQL 日志交由 Logback 统一管理（配合 logback-spring.xml 中 mapper 包的 DEBUG 配置）
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
 knife4j:
   basic:

@@ -58,6 +58,17 @@ mybatis:
     default-fetch-size: 100
     default-statement-timeout: 10
 
+# PageHelper 分页插件配置
+pagehelper:
+  # 启用分页插件
+  helper-dialect: mysql
+  # 合理化分页：pageNum<=0 时查询第一页，pageNum>pages 时查询最后一页
+  reasonable: true
+  # 支持通过 Mapper 接口参数来传递分页参数
+  support-methods-arguments: true
+  # 参数值映射
+  params: count=countSql
+
 # http://localhost:8080/api/doc.html、http://localhost:8080/api/swagger-ui.html
 knife4j:
   # 开启增强模式

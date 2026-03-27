@@ -75,27 +75,46 @@
 
     <!-- 开发环境配置 -->
     <springProfile name="dev">
-        <!-- 开发环境：打印彩色日志到控制台，DEBUG级别 -->
+        <!-- 开发环境：打印彩色日志到控制台，INFO 级别起步 -->
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE_ALL"/>
             <appender-ref ref="FILE_ERROR"/>
         </root>
-        <!-- 项目代码使用DEBUG级别 -->
-        <logger name="com.history" level="DEBUG" additivity="true"/>
-        <!-- SQL日志 -->
-        <logger name="com.history.mapper" level="DEBUG"/>
+
+        <!-- 项目业务代码使用 DEBUG 级别 -->
+        <logger name="com.history" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE_ALL"/>
+            <appender-ref ref="FILE_ERROR"/>
+        </logger>
+
+        <!--
+            MyBatis SQL 日志：需配合 application-dev.yml 中
+            log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+            MyBatis 用 Mapper 接口的全限定名作为 Logger Name，
+            因此只需将 com.history.mapper 设为 DEBUG 即可捕获所有 SQL。
+        -->
+        <logger name="com.history.mapper" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE_ALL"/>
+        </logger>
     </springProfile>
 
     <!-- 生产环境配置 -->
     <springProfile name="prod">
-        <!-- 生产环境：INFO级别，不输出到控制台 -->
+        <!-- 生产环境：INFO 级别，只写文件，不输出到控制台 -->
         <root level="INFO">
             <appender-ref ref="FILE_ALL"/>
             <appender-ref ref="FILE_ERROR"/>
         </root>
-        <!-- 项目代码使用INFO级别 -->
-        <logger name="com.history" level="INFO"/>
+        <!-- 项目业务代码 INFO 级别（RequestLoggingInterceptor 由 application-prod.yml 中的 logging.level 单独降为 WARN） -->
+        <logger name="com.history" level="INFO" additivity="false">
+            <appender-ref ref="FILE_ALL"/>
+            <appender-ref ref="FILE_ERROR"/>
+        </logger>
+        <!-- 生产环境 Mapper SQL 日志关闭（MyBatis 使用 NoLoggingImpl，此处双重保障） -->
+        <logger name="com.history.mapper" level="OFF" additivity="false"/>
     </springProfile>
 
     <!-- 默认配置（未指定profile时生效） -->
