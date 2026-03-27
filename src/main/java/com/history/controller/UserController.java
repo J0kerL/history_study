@@ -5,6 +5,7 @@ import com.history.common.PageResult;
 import com.history.common.Result;
 import com.history.model.dto.AchievementQueryDTO;
 import com.history.model.dto.FavoriteQueryDTO;
+import com.history.model.dto.UpdatePasswordDTO;
 import com.history.model.dto.UpdateUserProfileDTO;
 import com.history.model.entity.Achievement;
 import com.history.model.entity.User;
@@ -51,11 +52,19 @@ public class UserController {
     }
 
     @PutMapping("/profile")
-    @Operation(summary = "更新用户个人信息", description = "动态更新用户名、密码、手机号，仅填写的字段生效。如需修改头像请使用 POST /user/avatar 接口")
+    @Operation(summary = "更新用户个人信息", description = "动态更新用户名、手机号，仅填写的字段生效。如需修改头像请使用 POST /user/avatar 接口；如需修改密码请使用 PUT /user/password 接口")
     public Result<User> update(@Valid @RequestBody UpdateUserProfileDTO updateProfileDTO) {
         long id = StpUtil.getLoginIdAsLong();
         User user = userService.update(id, updateProfileDTO);
         return Result.success(user);
+    }
+
+    @PutMapping("/password")
+    @Operation(summary = "修改密码", description = "需提供原密码进行身份验证，新密码长度 6～20 个字符，且两次输入必须一致")
+    public Result<Void> changePassword(@Valid @RequestBody UpdatePasswordDTO updatePasswordDTO) {
+        long id = StpUtil.getLoginIdAsLong();
+        userService.changePassword(id, updatePasswordDTO);
+        return Result.success();
     }
 
     @PostMapping("/avatar")

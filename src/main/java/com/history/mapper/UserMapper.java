@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 /**
  * @Author Diamond
@@ -68,4 +69,13 @@ public interface UserMapper {
      * @param avatarUrl OSS 头像访问 URL
      */
     void updateAvatar(@Param("id") long id, @Param("avatarUrl") String avatarUrl);
+
+    /**
+     * 更新用户密码
+     *
+     * @param id       用户主键
+     * @param password BCrypt 加密后的新密码
+     */
+    @Update("UPDATE t_user SET password = #{password} WHERE id = #{id}")
+    void updatePassword(@Param("id") long id, @Param("password") String password);
 }

@@ -6,17 +6,13 @@
         动态更新用户信息：只更新前端传入的非空字段（动态 SET）。
         参数说明：
           id  - 来自 @Param("id") 的用户主键
-          dto - 来自 @Param("dto") 的 UpdateUserProfileDTO，其中 password 已在 Service 层完成 BCrypt 加密
+          dto - 来自 @Param("dto") 的 UpdateUserProfileDTO
     -->
     <update id="update">
         UPDATE t_user
         <set>
             <if test="dto.username != null and dto.username != ''">
                 username = #{dto.username},
-            </if>
-            <!-- password 已在 Service 层经过 BCrypt 加密后传入 -->
-            <if test="dto.password != null and dto.password != ''">
-                password = #{dto.password},
             </if>
             <if test="dto.phone != null and dto.phone != ''">
                 phone = #{dto.phone},
