@@ -17,7 +17,7 @@
     <!-- 根据用户id查询用户成就列表 -->
     <select id="selectByUserId" resultType="com.history.model.entity.UserAchievement">
         SELECT *
-        FROM user_achievement
+        FROM t_user_achievement
         WHERE user_id = #{id}
         ORDER BY unlocked_at DESC
     </select>
