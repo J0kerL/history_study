@@ -51,4 +51,12 @@ public interface FavoriteMapper {
      * @return 收藏数量
      */
     int countFavorite(@Param("userId") long userId, @Param("type") Integer type, @Param("refId") Long refId);
+
+    /**
+     * 统计用户收藏总数。
+     *
+     * @param userId 用户ID
+     * @return 收藏总数
+     */
+    int countByUserId(@Param("userId") long userId);
 }

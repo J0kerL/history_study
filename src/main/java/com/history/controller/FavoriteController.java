@@ -1,5 +1,6 @@
 package com.history.controller;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.history.common.Result;
 import com.history.model.dto.FavoriteDTO;
 import com.history.model.dto.SetFavoriteStatusDTO;
@@ -58,5 +59,15 @@ public class FavoriteController {
     @Operation(summary = "设置收藏状态", description = "按目标状态设置当前用户对指定事件或人物的收藏状态，适用于前端单按钮切换场景")
     public Result<Boolean> setFavoriteStatus(@Valid @RequestBody SetFavoriteStatusDTO setFavoriteStatusDTO) {
         return Result.success(favoriteService.setFavoriteStatus(setFavoriteStatusDTO));
+    }
+
+    /**
+     * 收藏总数统计接口。
+     */
+    @GetMapping("/count")
+    @Operation(summary = "收藏总数", description = "统计当前登录用户的收藏总数")
+    public Result<Integer> countFavorites() {
+        long userId = StpUtil.getLoginIdAsLong();
+        return Result.success(favoriteService.countFavorites(userId));
     }
 }

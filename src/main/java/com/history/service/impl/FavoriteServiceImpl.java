@@ -126,6 +126,14 @@ public class FavoriteServiceImpl implements FavoriteService {
     }
 
     /**
+     * 统计用户收藏总数。
+     */
+    @Override
+    public int countFavorites(Long userId) {
+        return favoriteMapper.countByUserId(userId);
+    }
+
+    /**
      * 校验收藏目标是否存在。
      */
     private void validateTargetExists(Integer type, Long refId) {

@@ -102,4 +102,11 @@
         </choose>
         ORDER BY id DESC
     </select>
+
+    <!-- 统计用户收藏总数 -->
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(1)
+        FROM t_user_favorite
+        WHERE user_id = #{userId}
+    </select>
 </mapper>

@@ -51,4 +51,12 @@ public interface FavoriteService {
      * @return 设置后的最终收藏状态
      */
     boolean setFavoriteStatus(SetFavoriteStatusDTO setFavoriteStatusDTO);
+
+    /**
+     * 统计用户收藏总数。
+     *
+     * @param userId 用户ID
+     * @return 收藏总数
+     */
+    int countFavorites(Long userId);
 }
