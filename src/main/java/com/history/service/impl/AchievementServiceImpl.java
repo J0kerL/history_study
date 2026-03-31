@@ -5,7 +5,6 @@ import com.github.pagehelper.PageInfo;
 import com.history.common.PageResult;
 import com.history.exception.BusinessException;
 import com.history.mapper.AchievementMapper;
-import com.history.mapper.UserAchievementMapper;
 import com.history.mapper.UserMapper;
 import com.history.model.dto.AchievementQueryDTO;
 import com.history.model.entity.Achievement;
@@ -33,9 +32,6 @@ public class AchievementServiceImpl implements AchievementService {
     private UserMapper userMapper;
 
     @Resource
-    private UserAchievementMapper userAchievementMapper;
-
-    @Resource
     private AchievementMapper achievementMapper;
 
     @Override
@@ -50,7 +46,7 @@ public class AchievementServiceImpl implements AchievementService {
         PageHelper.startPage(queryDTO.getPageNum(), queryDTO.getPageSize());
 
         // 3. 根据用户 ID 查询成就关系（已由 mapper 增加 unlocked_at DESC 排序）
-        List<UserAchievement> userAchievements = userAchievementMapper.selectByUserId(userId);
+        List<UserAchievement> userAchievements = achievementMapper.selectByUserId(userId);
         if (userAchievements == null) {
             userAchievements = new ArrayList<>();
         }

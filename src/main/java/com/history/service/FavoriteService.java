@@ -1,6 +1,7 @@
 package com.history.service;
 
 import com.history.common.PageResult;
+import com.history.model.dto.AddFavoriteDTO;
 import com.history.model.dto.FavoriteQueryDTO;
 import com.history.model.vo.FavoriteVO;
 
@@ -19,4 +20,10 @@ public interface FavoriteService {
      * @return 分页的收藏列表
      */
     PageResult<FavoriteVO> listFavorites(Long userId, FavoriteQueryDTO queryDTO);
+
+    /**
+     * 添加收藏
+     * @param addFavoriteDTO 添加收藏的参数
+     */
+    void addFavorite(AddFavoriteDTO addFavoriteDTO);
 }

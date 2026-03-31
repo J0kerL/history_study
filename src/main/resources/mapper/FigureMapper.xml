@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.history.mapper.FigureMapper">
+
+    <resultMap id="BaseResultMap" type="com.history.model.entity.Figure">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="subtitle" property="subtitle"/>
+        <result column="birth_date" property="birthDate"/>
+        <result column="death_date" property="deathDate"/>
+        <result column="birthplace" property="birthplace"/>
+        <result column="content" property="content"/>
+        <result column="image_url" property="imageUrl"/>
+        <result column="tags" property="tags"/>
+        <result column="status" property="status"/>
+        <result column="source" property="source"/>
+    </resultMap>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT id, name, subtitle, birth_date, death_date, birthplace, content, image_url, tags, status, source
+        FROM t_figure
+        WHERE id = #{id}
+    </select>
+
+</mapper>

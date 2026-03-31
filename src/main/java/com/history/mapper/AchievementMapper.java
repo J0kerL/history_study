@@ -1,6 +1,7 @@
 package com.history.mapper;
 
 import com.history.model.entity.Achievement;
+import com.history.model.entity.UserAchievement;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -21,4 +22,5 @@ public interface AchievementMapper {
      */
     List<Achievement> selectByIds(@Param("achievementIds") List<Integer> achievementIds);
 
+    List<UserAchievement> selectByUserId(long id);
 }
