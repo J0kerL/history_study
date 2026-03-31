@@ -16,16 +16,34 @@
         <result column="source" property="source"/>
     </resultMap>
 
-    <!--
-        根据月份和日期查询历史事件（跨年份）
-        例如：查询4月27日发生的所有历史事件，按年份升序排列
-    -->
-    <select id="selectByMonthDay" resultMap="BaseResultMap">
-        SELECT id, title, year, month, day, summary, content, image_url, tags, source
+    <resultMap id="EventSummaryResultMap" type="com.history.model.vo.EventSummaryVO">
+        <id column="id" property="id"/>
+        <result column="year" property="year"/>
+        <result column="title" property="title"/>
+        <result column="summary" property="summary"/>
+        <result column="image_url" property="imageUrl"/>
+    </resultMap>
+
+    <select id="selectSummaryByMonthDay" resultMap="EventSummaryResultMap">
+        SELECT id, year, title, summary, image_url
         FROM t_event
         WHERE month = #{month}
           AND day = #{day}
         ORDER BY year ASC
+    </select>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT id, title, year, month, day, summary, content, image_url, tags, source
+        FROM t_event
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectRelatedSummaries" resultMap="EventSummaryResultMap">
+        SELECT e.id, e.year, e.title, e.summary, e.image_url
+        FROM t_event_relation er
+        INNER JOIN t_event e ON e.id = er.related_id
+        WHERE er.event_id = #{eventId}
+        ORDER BY er.sort_order DESC, e.year ASC
     </select>
 
 </mapper>

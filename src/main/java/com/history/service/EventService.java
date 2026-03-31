@@ -1,19 +1,24 @@
 package com.history.service;
 
-import com.history.model.entity.Event;
+import com.history.model.vo.EventDetailVO;
+import com.history.model.vo.EventSummaryVO;
 
 import java.util.List;
 
-/**
- * @Author Diamond
- * @Create 2026/3/27
- */
 public interface EventService {
 
     /**
-     * 获取今日事件
-     * @return
+     * 获取今日事件列表。
+     *
+     * @return 事件列表
      */
-    List<Event> getTodayEvents();
+    List<EventSummaryVO> getTodayEvents();
 
+    /**
+     * 获取事件详情及关联事件。
+     *
+     * @param id 事件ID
+     * @return 事件详情
+     */
+    EventDetailVO getEventDetail(Long id);
 }

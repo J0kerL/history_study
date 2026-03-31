@@ -30,6 +30,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
                         "/auth/refreshToken",
                         "/auth/register",
                         "/auth/send-verification-code",
+                        "/event/todayEvents",
                         "/doc.html",
                         "/swagger-ui.html",
                         "/swagger-ui/**",
