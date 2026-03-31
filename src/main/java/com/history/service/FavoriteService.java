@@ -3,6 +3,7 @@ package com.history.service;
 import com.history.common.PageResult;
 import com.history.model.dto.FavoriteDTO;
 import com.history.model.dto.FavoriteQueryDTO;
+import com.history.model.dto.SetFavoriteStatusDTO;
 import com.history.model.vo.FavoriteVO;
 
 /**
@@ -42,4 +43,12 @@ public interface FavoriteService {
      * @return true=已收藏，false=未收藏
      */
     boolean hasFavorite(FavoriteDTO favoriteDTO);
+
+    /**
+     * 设置收藏状态。
+     *
+     * @param setFavoriteStatusDTO 设置收藏状态参数
+     * @return 设置后的最终收藏状态
+     */
+    boolean setFavoriteStatus(SetFavoriteStatusDTO setFavoriteStatusDTO);
 }

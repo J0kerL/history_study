@@ -2,6 +2,7 @@ package com.history.controller;
 
 import com.history.common.Result;
 import com.history.model.dto.FavoriteDTO;
+import com.history.model.dto.SetFavoriteStatusDTO;
 import com.history.service.FavoriteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,5 +49,14 @@ public class FavoriteController {
     @Operation(summary = "查询是否已收藏", description = "查询当前登录用户是否已收藏指定事件或人物")
     public Result<Boolean> hasFavorite(@Valid FavoriteDTO favoriteDTO) {
         return Result.success(favoriteService.hasFavorite(favoriteDTO));
+    }
+
+    /**
+     * 设置收藏状态接口。
+     */
+    @PostMapping("/set-status")
+    @Operation(summary = "设置收藏状态", description = "按目标状态设置当前用户对指定事件或人物的收藏状态，适用于前端单按钮切换场景")
+    public Result<Boolean> setFavoriteStatus(@Valid @RequestBody SetFavoriteStatusDTO setFavoriteStatusDTO) {
+        return Result.success(favoriteService.setFavoriteStatus(setFavoriteStatusDTO));
     }
 }
