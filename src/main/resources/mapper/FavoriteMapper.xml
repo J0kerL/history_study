@@ -9,6 +9,23 @@
         VALUES (#{userId}, #{type}, #{refId})
     </insert>
 
+    <!-- 取消收藏 -->
+    <delete id="deleteFavorite">
+        DELETE FROM t_user_favorite
+        WHERE user_id = #{userId}
+          AND type = #{type}
+          AND ref_id = #{refId}
+    </delete>
+
+    <!-- 查询是否已收藏 -->
+    <select id="countFavorite" resultType="int">
+        SELECT COUNT(1)
+        FROM t_user_favorite
+        WHERE user_id = #{userId}
+          AND type = #{type}
+          AND ref_id = #{refId}
+    </select>
+
     <!--
         查询用户的收藏列表（分页）。
         使用 UNION ALL 合并事件和人物的收藏，避免复杂的 CASE WHEN。

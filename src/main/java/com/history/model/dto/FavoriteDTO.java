@@ -8,7 +8,7 @@ import lombok.Data;
 
 @Data
 @Schema(description = "添加收藏请求参数")
-public class AddFavoriteDTO {
+public class FavoriteDTO {
 
     @NotNull(message = "收藏类型不能为空")
     @Min(value = 1, message = "收藏类型仅支持：1=事件，2=人物")

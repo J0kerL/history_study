@@ -18,8 +18,8 @@ public interface FavoriteMapper {
      * 查询用户的收藏列表（分页）。
      *
      * @param userId 用户ID
-     * @param type   收藏类型筛选（可选，null 表示不筛选）
-     * @return 收藏列表（包含关联对象信息）
+     * @param type 收藏类型筛选
+     * @return 收藏列表
      */
     List<FavoriteVO> selectFavoritesByUserId(@Param("userId") Long userId, @Param("type") Byte type);
 
@@ -27,8 +27,28 @@ public interface FavoriteMapper {
      * 添加收藏。
      *
      * @param userId 用户ID
-     * @param type   收藏类型
-     * @param refId  被收藏的资源ID
+     * @param type 收藏类型
+     * @param refId 资源ID
      */
-    void insertFavorite(long userId, Integer type, Long refId);
+    void insertFavorite(@Param("userId") long userId, @Param("type") Integer type, @Param("refId") Long refId);
+
+    /**
+     * 取消收藏。
+     *
+     * @param userId 用户ID
+     * @param type 收藏类型
+     * @param refId 资源ID
+     * @return 受影响行数
+     */
+    int deleteFavorite(@Param("userId") long userId, @Param("type") Integer type, @Param("refId") Long refId);
+
+    /**
+     * 查询是否已收藏。
+     *
+     * @param userId 用户ID
+     * @param type 收藏类型
+     * @param refId 资源ID
+     * @return 收藏数量
+     */
+    int countFavorite(@Param("userId") long userId, @Param("type") Integer type, @Param("refId") Long refId);
 }
