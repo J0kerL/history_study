@@ -198,6 +198,14 @@ public class AuthServiceImpl implements AuthService {
     public Map<String, Object> refreshToken(String refreshToken) {
         try {
             Object userId = SaTempUtil.parseToken(refreshToken);
+            User user = userMapper.selectById(Long.parseLong(String.valueOf(userId)));
+            if (user == null) {
+                throw new BusinessException("用户不存在");
+            }
+            if (user.getStatus() == 0) {
+                throw new BusinessException("用户已被禁用");
+            }
+
             String newAccessToken = StpUtil.createLoginSession(userId);
             long expiresIn = StpUtil.getTokenTimeout(newAccessToken);
 
@@ -206,6 +214,8 @@ public class AuthServiceImpl implements AuthService {
             data.put("refreshToken", refreshToken);
             data.put("expiresIn", expiresIn);
             return data;
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             throw new BusinessException(401, "刷新Token失败，请重新登录", e);
         }

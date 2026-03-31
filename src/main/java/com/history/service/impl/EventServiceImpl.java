@@ -32,7 +32,7 @@ public class EventServiceImpl implements EventService {
 
         // 3.如果数据库中没有今日事件，则调用大模型生成今日事件并落库 t_event，后续直接返回库中数据。
         /*if (events == null || events.isEmpty()) {
-            // TODO 调用大模型生成今日事件并落库 t_event，后续直接返回库中数据。
+            // TODO 调用大模型生成今日事件并落库 t_event，摘要最多40字，后续直接返回库中数据。
         }*/
         return events;
     }
