@@ -43,6 +43,17 @@ spring:
           max-idle: 8
           # 连接池最大等待时间（单位：毫秒，-1表示无限制）
           max-wait: 3s
+  ai:
+    model:
+      chat: openai
+    openai:
+      api-key: sk-5fba47f57ae94f259d036d3387dc721e
+      base-url: https://dashscope.aliyuncs.com
+      chat:
+        completions-path: /compatible-mode/v1/chat/completions
+        options:
+          model: qwen3-max-2026-01-23
+          temperature: 0.7
 
 mybatis:
   # Mapper XML 扫描路径，后续新增 XML 时无需再改配置。
