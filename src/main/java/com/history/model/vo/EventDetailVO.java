@@ -50,4 +50,10 @@ public class EventDetailVO implements Serializable {
 
     @Schema(description = "关联事件列表")
     private List<EventSummaryVO> relatedEvents;
+
+    @Schema(description = "关联事件状态：ready/generating")
+    private String relatedEventsStatus;
+
+    @Schema(description = "关联事件状态说明")
+    private String relatedEventsMessage;
 }

@@ -2,39 +2,70 @@ package com.history.service.impl;
 
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.StrUtil;
 import com.history.exception.BusinessException;
 import com.history.mapper.EventMapper;
 import com.history.model.entity.Event;
 import com.history.model.vo.EventDetailVO;
 import com.history.model.vo.EventSummaryVO;
+import com.history.model.vo.TodayEventsVO;
 import com.history.service.EventService;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
+@Slf4j
 @Service
 public class EventServiceImpl implements EventService {
+
+    private static final int TODAY_EVENT_LIMIT = 5;
+    private static final int RELATED_EVENT_LIMIT = 3;
 
     @Resource
     private EventMapper eventMapper;
 
+    @Resource
+    private EventAiAsyncService eventAiAsyncService;
+
     @Override
-    public List<EventSummaryVO> getTodayEvents() {
-        // 1.获取今日日期
+    public TodayEventsVO getTodayEvents() {
         DateTime now = DateUtil.date();
         int month = DateUtil.month(now) + 1;
         int day = DateUtil.dayOfMonth(now);
 
-        // 2.根据月日来查询今日事件
-        List<EventSummaryVO> events = eventMapper.selectSummaryByMonthDay(month, day);
+        List<EventSummaryVO> events = deduplicateSummaries(eventMapper.selectSummaryByMonthDay(month, day), TODAY_EVENT_LIMIT);
+        String generationStatus = "ready";
+        String generationMessage = "今日事件已就绪";
 
-        // 3.如果数据库中没有今日事件，则调用大模型生成今日事件并落库 t_event，后续直接返回库中数据。
-        /*if (events == null || events.isEmpty()) {
-            // TODO 调用大模型生成今日事件并落库 t_event，摘要最多40字，后续直接返回库中数据。
-        }*/
-        return events;
+        if (events.isEmpty()) {
+            log.info("今日事件为空，异步触发大模型生成: month={}, day={}", month, day);
+            eventAiAsyncService.generateTodayEventsAsync(month, day);
+            generationStatus = "generating";
+            generationMessage = "今日事件生成中";
+        } else if (events.size() < TODAY_EVENT_LIMIT) {
+            log.info("今日事件存在缺口或去重后不足，异步补齐: month={}, day={}, count={}", month, day, events.size());
+            eventAiAsyncService.generateTodayEventsAsync(month, day);
+            if (eventAiAsyncService.isTodayGenerationRunning(month, day)) {
+                generationStatus = "generating";
+                generationMessage = "今日事件补充生成中";
+            }
+        } else {
+            log.info("命中今日事件数据: month={}, day={}, count={}", month, day, events.size());
+        }
+
+        if (events.isEmpty() && eventAiAsyncService.isTodayGenerationRunning(month, day)) {
+            generationStatus = "generating";
+            generationMessage = "今日事件生成中";
+        }
+
+        log.info("返回今日事件列表: month={}, day={}, count={}, status={}",
+                month, day, events.size(), generationStatus);
+        return new TodayEventsVO(events, generationStatus, generationMessage);
     }
 
     @Override
@@ -44,14 +75,26 @@ public class EventServiceImpl implements EventService {
             throw new BusinessException("事件不存在");
         }
 
-        // 1.获取事件关联事件列表
-        List<EventSummaryVO> relatedEvents = eventMapper.selectRelatedSummaries(id);
-        // 2.如果数据库中没有关联事件，则返回空列表，并接入大模型生成关联事件
-        if (relatedEvents == null || relatedEvents.isEmpty()) {
-            relatedEvents = Collections.emptyList();
-            // TODO 接入大模型：先基于当前事件 tags 召回候选事件，再由大模型做筛选、排序并落库 t_event_relation。
+        List<EventSummaryVO> relatedEvents = deduplicateSummaries(eventMapper.selectRelatedSummaries(id), RELATED_EVENT_LIMIT);
+        String relatedEventsStatus = "ready";
+        String relatedEventsMessage = "关联事件已就绪";
+
+        if (relatedEvents.isEmpty()) {
+            log.info("事件缺少关联数据，异步触发大模型推荐: eventId={}", id);
+            eventAiAsyncService.generateRelatedEventsAsync(event);
+            relatedEventsStatus = "generating";
+            relatedEventsMessage = "关联事件生成中";
+        } else {
+            log.info("命中事件关联数据: eventId={}, count={}", id, relatedEvents.size());
         }
 
+        if (relatedEvents.isEmpty() && eventAiAsyncService.isRelatedGenerationRunning(id)) {
+            relatedEventsStatus = "generating";
+            relatedEventsMessage = "关联事件生成中";
+        }
+
+        log.info("返回事件详情: eventId={}, relatedCount={}, relatedStatus={}",
+                id, relatedEvents.size(), relatedEventsStatus);
         return new EventDetailVO(
                 event.getId(),
                 event.getTitle(),
@@ -63,7 +106,28 @@ public class EventServiceImpl implements EventService {
                 event.getImageUrl(),
                 event.getTags(),
                 event.getSource(),
-                relatedEvents
+                relatedEvents,
+                relatedEventsStatus,
+                relatedEventsMessage
         );
+    }
+
+    private List<EventSummaryVO> deduplicateSummaries(List<EventSummaryVO> events, int limit) {
+        if (events == null || events.isEmpty()) {
+            return List.of();
+        }
+
+        Map<String, EventSummaryVO> uniqueEvents = new LinkedHashMap<>();
+        for (EventSummaryVO event : events) {
+            if (event == null || event.getId() == null || StrUtil.isBlank(event.getTitle())) {
+                continue;
+            }
+            String key = event.getYear() + "::" + StrUtil.trim(event.getTitle()).replaceAll("\\s+", "");
+            uniqueEvents.putIfAbsent(key, event);
+            if (uniqueEvents.size() >= limit) {
+                break;
+            }
+        }
+        return new ArrayList<>(uniqueEvents.values());
     }
 }

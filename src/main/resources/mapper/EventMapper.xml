@@ -30,6 +30,7 @@
         WHERE month = #{month}
           AND day = #{day}
         ORDER BY year ASC
+        LIMIT 5
     </select>
 
     <select id="selectById" resultMap="BaseResultMap">
@@ -44,6 +45,61 @@
         INNER JOIN t_event e ON e.id = er.related_id
         WHERE er.event_id = #{eventId}
         ORDER BY er.sort_order DESC, e.year ASC
+        LIMIT 3
     </select>
+
+    <insert id="insert" parameterType="com.history.model.entity.Event" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_event (
+            title,
+            year,
+            month,
+            day,
+            summary,
+            content,
+            image_url,
+            tags,
+            source
+        ) VALUES (
+            #{title},
+            #{year},
+            #{month},
+            #{day},
+            #{summary},
+            #{content},
+            #{imageUrl},
+            #{tags},
+            #{source}
+        )
+    </insert>
+
+    <select id="selectRecommendationCandidates" resultMap="BaseResultMap">
+        SELECT id, title, year, month, day, summary, content, image_url, tags, source
+        FROM t_event
+        WHERE id != #{eventId}
+        <if test="keywords != null and keywords.size() > 0">
+            AND (
+            <foreach collection="keywords" item="keyword" separator=" OR ">
+                title LIKE CONCAT('%', #{keyword}, '%')
+                OR summary LIKE CONCAT('%', #{keyword}, '%')
+                OR tags LIKE CONCAT('%', #{keyword}, '%')
+            </foreach>
+            )
+        </if>
+        ORDER BY year DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectNearbyRecommendationCandidates" resultMap="BaseResultMap">
+        SELECT id, title, year, month, day, summary, content, image_url, tags, source
+        FROM t_event
+        WHERE id != #{eventId}
+        ORDER BY ABS(year - #{year}) ASC, id DESC
+        LIMIT #{limit}
+    </select>
+
+    <insert id="insertRelation">
+        INSERT IGNORE INTO t_event_relation (event_id, related_id, sort_order)
+        VALUES (#{eventId}, #{relatedId}, #{sortOrder})
+    </insert>
 
 </mapper>
