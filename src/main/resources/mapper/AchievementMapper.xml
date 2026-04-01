@@ -20,14 +20,14 @@
     <!-- 根据id查询成就详情 -->
     <select id="selectById" resultType="com.history.model.entity.Achievement">
         select *
-        from achievement
+        from t_achievement
         where id = #{achievementId}
     </select>
 
     <!-- 批量根据 id 查询成就定义 -->
     <select id="selectByIds" resultMap="BaseResultMap">
         select *
-        from achievement
+        from t_achievement
         where id in
         <foreach collection="achievementIds" item="id" open="(" separator="," close=")">
             #{id}
