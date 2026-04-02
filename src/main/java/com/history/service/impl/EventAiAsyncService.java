@@ -36,7 +36,7 @@ public class EventAiAsyncService {
     private static final int RELATED_CANDIDATE_LIMIT = 20;
     private static final int RELATED_CANDIDATE_FALLBACK_LIMIT = 10;
     private static final int SUMMARY_MAX_LENGTH = 40;
-    private static final int CONTENT_MIN_LENGTH = 180;
+    private static final int CONTENT_MIN_LENGTH = 200;
     private static final short CHINESE_HISTORY_START_YEAR = -2070;
     private static final short CHINESE_HISTORY_END_YEAR = 1911;
 
@@ -51,6 +51,9 @@ public class EventAiAsyncService {
 
     @Resource
     private EventSseService eventSseService;
+
+    @Resource
+    private EventImageService eventImageService;
 
     @Async("eventAiTaskExecutor")
     public void generateTodayEventsAsync(int month, int day) {
@@ -152,7 +155,39 @@ public class EventAiAsyncService {
             eventMapper.insert(event);
         }
         log.info("今日事件落库完成: month={}, day={}, savedCount={}", month, day, validEvents.size());
+
+        // 异步生成封面图片，不阻塞事件返回
+        generateEventImagesAsync(validEvents.values().stream().toList());
         return true;
+    }
+
+    @Async("eventAiTaskExecutor")
+    public void generateEventImagesAsync(List<Event> events) {
+        if (events == null || events.isEmpty()) {
+            return;
+        }
+        log.info("开始异步生成 {} 个事件的封面图片", events.size());
+        for (Event event : events) {
+            if (event.getImageUrl() != null) {
+                continue;
+            }
+            try {
+                String imagePrompt = buildImagePromptFromEvent(event);
+                String imageUrl = eventImageService.generateEventImage(imagePrompt);
+                if (imageUrl != null) {
+                    eventMapper.updateImageUrl(event.getId(), imageUrl);
+                    log.info("事件封面图片生成成功: eventId={}, url={}", event.getId(), imageUrl);
+                }
+            } catch (Exception e) {
+                log.warn("事件封面图片生成失败: eventId={}", event.getId(), e);
+            }
+        }
+        log.info("事件封面图片异步生成完成");
+    }
+
+    private String buildImagePromptFromEvent(Event event) {
+        return "中国古代历史题材插画，风格为传统水墨与国风工笔结合。事件："
+                + event.getTitle() + "。" + event.getSummary();
     }
 
     private boolean doGenerateRelatedEvents(Event currentEvent) {
@@ -308,6 +343,11 @@ public class EventAiAsyncService {
                 || StrUtil.isBlank(tags)
                 || !isWithinChineseHistoryRange(generatedEvent.getYear())
                 || content.length() < CONTENT_MIN_LENGTH) {
+            log.warn("事件被过滤: title={}, year={}, title_len={}, content_len={}, inRange={}",
+                    title, generatedEvent.getYear(),
+                    StrUtil.isBlank(title) ? 0 : title.length(),
+                    content.length(),
+                    isWithinChineseHistoryRange(generatedEvent.getYear()));
             return null;
         }
 
@@ -320,6 +360,7 @@ public class EventAiAsyncService {
         event.setContent(content);
         event.setTags(tags);
         event.setSource(AI_SOURCE);
+        // imageUrl 留空，由异步任务后续生成
         return event;
     }
 
@@ -352,19 +393,21 @@ public class EventAiAsyncService {
                 + CHINESE_HISTORY_START_YEAR + " 到 " + CHINESE_HISTORY_END_YEAR + " 之间。"
                 + "禁止生成中国近现代史、当代史、世界史或外国历史事件。"
                 + "请使用客观、中性、百科式表述，不要渲染冲突细节。"
-                + "必须返回严格 JSON，字段结构为 {\"events\":[{\"title\":\"\",\"year\":0,\"summary\":\"\",\"content\":\"\",\"tags\":\"标签1,标签2\"}]}。"
+                + "必须返回严格 JSON，字段结构为 {\"events\":[{\"title\":\"\",\"year\":0,\"summary\":\"\",\"content\":\"\",\"tags\":\"标签1,标签2\",\"imagePrompt\":\"用于文生图模型生成配图的详细画面描述\"}]}。"
                 + "一次生成 5 条，不要输出 Markdown，不要输出解释。"
                 + "summary 必须是 25 到 40 字的中文摘要。"
-                + "content 必须是可直接展示的详细中文正文，长度至少 180 字，建议 3 到 5 句，说明背景、经过和历史影响。"
+                + "content 必须是可直接展示的详细中文正文，长度至少 300 字，详细说明背景、时间、人物、经过和历史影响。"
                 + "同一天的 5 条事件必须彼此不同，标题不能重复，尽量覆盖不同朝代。"
                 + "所有字段值里都不要出现 ASCII 英文双引号，若需要引用，请改用中文引号或直接改写。"
-                + "tags 使用英文逗号分隔，并体现中国历史时期，如夏朝、商朝、西周、东周、春秋、战国、秦朝、汉朝、三国、晋朝、南北朝、隋朝、唐朝、宋朝、元朝、明朝、清朝、晚清等。";
+                + "tags 使用英文逗号分隔，并体现中国历史时期，如夏朝、商朝、西周、东周、春秋、战国、秦朝、汉朝、三国、晋朝、南北朝、隋朝、唐朝、宋朝、元朝、明朝、清朝、晚清等。"
+                + "imagePrompt 是一段详细的中文画面描述，用于文生图模型生成与该历史事件匹配的插画。要求包含场景、人物、服饰、建筑、色彩氛围、时代特征等视觉元素，风格指定为中国传统水墨或国风插画。每条约 60-120 字。";
     }
 
     private String buildTodayEventsUserPrompt(int month, int day) {
         return "请生成 5 条发生在 " + month + " 月 " + day + " 日的中华历史事件。"
                 + "要求只使用夏商周到清末的中国历史事件，彼此不重复，尽量覆盖不同朝代。"
-                + "正文要足够详细，让用户点进详情后能够直接了解事件背景、经过和影响。";
+                + "正文要足够详细，让用户点进详情后能够直接了解事件背景、经过和影响。"
+                + "同时为每条事件生成对应的 imagePrompt（用于文生图模型生成配图），描述该事件对应的视觉画面。";
     }
 
     private String buildRelatedEventsSystemPrompt() {

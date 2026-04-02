@@ -102,4 +102,10 @@
         VALUES (#{eventId}, #{relatedId}, #{sortOrder})
     </insert>
 
+    <update id="updateImageUrl">
+        UPDATE t_event
+        SET image_url = #{imageUrl}
+        WHERE id = #{id}
+    </update>
+
 </mapper>

@@ -27,4 +27,6 @@ public interface EventMapper {
     int insertRelation(@Param("eventId") Long eventId,
                        @Param("relatedId") Long relatedId,
                        @Param("sortOrder") Integer sortOrder);
+
+    int updateImageUrl(@Param("id") Long id, @Param("imageUrl") String imageUrl);
 }

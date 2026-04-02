@@ -17,4 +17,6 @@ public class GeneratedTodayEvent {
     private String content;
 
     private String tags;
+
+    private String imagePrompt;
 }

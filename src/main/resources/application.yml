@@ -136,3 +136,23 @@ oss:
     - image/png
     - image/gif
     - image/webp
+
+# ModelScope 文生图大模型配置
+modelscope:
+  # API Key（魔搭社区）
+  api-key: ms-629ef7e6-0abc-4740-9aaa-2077a7093dd4
+  # API 基础地址
+  base-url: https://api-inference.modelscope.cn
+  # 模型名称
+  model: Tongyi-MAI/Z-Image-Turbo
+  # 图片尺寸（宽 x 高）
+  width: 720
+  height: 384
+  # 推理步数
+  num-inference-steps: 9
+  # 引导系数
+  guidance-scale: 0.0
+  # 轮询间隔（毫秒）
+  polling-interval-ms: 2000
+  # 最大轮询次数
+  max-polling-attempts: 60
