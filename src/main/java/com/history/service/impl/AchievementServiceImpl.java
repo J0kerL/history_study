@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -98,6 +99,17 @@ public class AchievementServiceImpl implements AchievementService {
                 pageInfo.getTotal(),
                 achievementList
         );
+    }
+
+    @Override
+    public void unlockAchievement(Long userId, Integer achievementId) {
+        List<UserAchievement> current = achievementMapper.selectByUserId(userId);
+        boolean alreadyUnlocked = current != null && current.stream()
+                .anyMatch(a -> a.getAchievementId().equals(achievementId));
+        if (alreadyUnlocked) {
+            return;
+        }
+        achievementMapper.insertUserAchievement(userId, achievementId);
     }
 }
 

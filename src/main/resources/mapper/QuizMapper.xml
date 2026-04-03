@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.history.mapper.QuizMapper">
+
+    <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_quiz (
+            question, quiz_type, option_a, option_b, option_c, option_d,
+            correct_options, explanation, difficulty, tags, status, source
+        ) VALUES
+        <foreach collection="quizzes" item="quiz" separator=",">
+            (#{quiz.question}, #{quiz.quizType}, #{quiz.optionA}, #{quiz.optionB},
+             #{quiz.optionC}, #{quiz.optionD}, #{quiz.correctOptions}, #{quiz.explanation},
+             #{quiz.difficulty}, #{quiz.tags}, #{quiz.status}, #{quiz.source})
+        </foreach>
+    </insert>
+
+    <select id="selectUnusedQuiz" resultType="com.history.model.entity.Quiz">
+        SELECT q.* FROM t_quiz q
+        LEFT JOIN t_daily_quiz dq ON q.id = dq.quiz_id
+        WHERE q.status = 1 AND dq.quiz_id IS NULL
+        <if test="difficulty != null and difficulty > 0">
+            AND q.difficulty = #{difficulty}
+        </if>
+        ORDER BY RAND() LIMIT 1
+    </select>
+
+    <select id="selectUserQuizHistory" resultType="java.util.HashMap">
+        SELECT r.answer_date, q.question, q.quiz_type, q.correct_options,
+               r.selected_options, r.is_correct
+        FROM t_user_quiz_record r
+        JOIN t_quiz q ON r.quiz_id = q.id
+        WHERE r.user_id = #{userId}
+        ORDER BY r.answer_date DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

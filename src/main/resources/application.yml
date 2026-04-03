@@ -156,3 +156,8 @@ modelscope:
   polling-interval-ms: 2000
   # 最大轮询次数
   max-polling-attempts: 60
+
+# 每日一题题库配置
+quiz:
+  # 启动时是否自动检查并补充题库（默认不自动，开发环境需手动调用接口生成题目，生产改为true）
+  generate-on-startup: false

@@ -19,5 +19,13 @@ public interface AchievementService {
      * @return 分页结果（成就定义）
      */
     PageResult<Achievement> listAchievements(Long userId, AchievementQueryDTO queryDTO);
+
+    /**
+     * 为用户解锁一个成就（仅当尚未解锁时执行）。
+     *
+     * @param userId      用户 ID
+     * @param achievementId 成就 ID
+     */
+    void unlockAchievement(Long userId, Integer achievementId);
 }
 

@@ -2,11 +2,7 @@ package com.history.mapper;
 
 import com.history.model.dto.UpdateUserProfileDTO;
 import com.history.model.entity.User;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Options;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.*;
 
 /**
  * @Author Diamond
@@ -78,4 +74,21 @@ public interface UserMapper {
      */
     @Update("UPDATE t_user SET password = #{password} WHERE id = #{id}")
     void updatePassword(@Param("id") long id, @Param("password") String password);
+
+    /**
+     * 更新用户答题统计数据。
+     */
+    @Update("""
+            UPDATE t_user SET
+                total_quiz_count = #{totalQuizCount},
+                correct_quiz_count = #{correctQuizCount},
+                streak_days = #{streakDays},
+                max_streak_days = #{maxStreakDays}
+            WHERE id = #{id}
+            """)
+    void updateUserQuizStats(@Param("id") Long id,
+                             @Param("totalQuizCount") int totalQuizCount,
+                             @Param("correctQuizCount") int correctQuizCount,
+                             @Param("streakDays") int streakDays,
+                             @Param("maxStreakDays") int maxStreakDays);
 }
