@@ -27,5 +27,20 @@ public interface AchievementService {
      * @param achievementId 成就 ID
      */
     void unlockAchievement(Long userId, Integer achievementId);
+
+    /**
+     * 统计用户已解锁的成就数量。
+     *
+     * @param userId 用户 ID
+     * @return 已解锁成就数量
+     */
+    int countUnlockedAchievements(Long userId);
+
+    /**
+     * 检查并解锁用户已满足条件的成就。
+     *
+     * @param userId 用户 ID
+     */
+    void checkAndUnlockAchievements(Long userId);
 }
 

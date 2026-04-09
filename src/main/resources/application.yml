@@ -140,7 +140,7 @@ oss:
 # ModelScope 文生图大模型配置
 modelscope:
   # API Key（魔搭社区）
-  api-key: ms-629ef7e6-0abc-4740-9aaa-2077a7093dd4
+  api-key: YOUR_API_KEY
   # API 基础地址
   base-url: https://api-inference.modelscope.cn
   # 模型名称

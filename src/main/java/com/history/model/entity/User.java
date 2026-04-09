@@ -56,6 +56,9 @@ public class User implements Serializable {
     @Schema(description = "累计答对总数")
     private Integer correctQuizCount;
 
+    @Schema(description = "累计收藏总数")
+    private Integer totalFavoriteCount;
+
     @Schema(description = "状态：0-禁用，1-正常")
     private Byte status;
 }

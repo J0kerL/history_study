@@ -8,11 +8,13 @@ import com.history.exception.BusinessException;
 import com.history.mapper.EventMapper;
 import com.history.mapper.FavoriteMapper;
 import com.history.mapper.FigureMapper;
+import com.history.mapper.UserMapper;
 import com.history.model.dto.FavoriteDTO;
 import com.history.model.dto.FavoriteQueryDTO;
 import com.history.model.dto.SetFavoriteStatusDTO;
 import com.history.model.vo.FavoriteVO;
 import com.history.service.FavoriteService;
+import com.history.service.LearningRecordService;
 import jakarta.annotation.Resource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,12 @@ public class FavoriteServiceImpl implements FavoriteService {
 
     @Resource
     private FigureMapper figureMapper;
+
+    @Resource
+    private UserMapper userMapper;
+
+    @Resource
+    private LearningRecordService learningRecordService;
 
     /**
      * 分页查询收藏列表。
@@ -63,6 +71,13 @@ public class FavoriteServiceImpl implements FavoriteService {
         } catch (DuplicateKeyException e) {
             throw new BusinessException("请勿重复收藏");
         }
+
+        // 更新用户收藏总数
+        int newCount = favoriteMapper.countByUserId(userId);
+        userMapper.updateTotalFavoriteCount(userId, newCount);
+
+        // 记录学习行为（收藏）
+        learningRecordService.recordLearningAction(userId, (byte) 4);
     }
 
     /**
@@ -118,10 +133,18 @@ public class FavoriteServiceImpl implements FavoriteService {
             } catch (DuplicateKeyException e) {
                 return true;
             }
+            // 更新用户收藏总数
+            int newCount = favoriteMapper.countByUserId(userId);
+            userMapper.updateTotalFavoriteCount(userId, newCount);
+            // 记录学习行为（收藏）
+            learningRecordService.recordLearningAction(userId, (byte) 4);
             return true;
         }
 
         favoriteMapper.deleteFavorite(userId, type, refId);
+        // 更新用户收藏总数
+        int newCount = favoriteMapper.countByUserId(userId);
+        userMapper.updateTotalFavoriteCount(userId, newCount);
         return false;
     }
 

@@ -175,8 +175,12 @@ public class ModelScopeImageClient {
             return node.asText();
         }
         if (node.isObject()) {
-            if (node.has("url")) return node.get("url").asText();
-            if (node.has("path")) return node.get("path").asText();
+            if (node.has("url")) {
+                return node.get("url").asText();
+            }
+            if (node.has("path")) {
+                return node.get("path").asText();
+            }
         }
         return null;
     }

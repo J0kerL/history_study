@@ -26,6 +26,7 @@ public interface UserMapper {
                 max_streak_days,
                 total_quiz_count,
                 correct_quiz_count,
+                total_favorite_count,
                 status
             ) values (
                 #{username},
@@ -37,6 +38,7 @@ public interface UserMapper {
                 #{maxStreakDays},
                 #{totalQuizCount},
                 #{correctQuizCount},
+                #{totalFavoriteCount},
                 #{status}
             )
             """)
@@ -91,4 +93,16 @@ public interface UserMapper {
                              @Param("correctQuizCount") int correctQuizCount,
                              @Param("streakDays") int streakDays,
                              @Param("maxStreakDays") int maxStreakDays);
+
+    /**
+     * 更新用户连续学习天数。
+     */
+    @Update("UPDATE t_user SET streak_days = #{streakDays} WHERE id = #{id}")
+    void updateStreakDays(@Param("id") Long id, @Param("streakDays") int streakDays);
+
+    /**
+     * 更新用户收藏总数。
+     */
+    @Update("UPDATE t_user SET total_favorite_count = #{totalFavoriteCount} WHERE id = #{id}")
+    void updateTotalFavoriteCount(@Param("id") Long id, @Param("totalFavoriteCount") int totalFavoriteCount);
 }

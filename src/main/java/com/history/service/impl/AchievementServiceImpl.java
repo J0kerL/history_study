@@ -12,12 +12,12 @@ import com.history.model.entity.User;
 import com.history.model.entity.UserAchievement;
 import com.history.service.AchievementService;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
  *
  * @author Diamond
  */
+@Slf4j
 @Service
 public class AchievementServiceImpl implements AchievementService {
 
@@ -110,6 +111,65 @@ public class AchievementServiceImpl implements AchievementService {
             return;
         }
         achievementMapper.insertUserAchievement(userId, achievementId);
+    }
+
+    @Override
+    public int countUnlockedAchievements(Long userId) {
+        return achievementMapper.countByUserId(userId);
+    }
+
+    @Override
+    public void checkAndUnlockAchievements(Long userId) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            return;
+        }
+
+        // 检查所有未解锁成就
+        List<Achievement> allAchievements = achievementMapper.selectAll();
+        List<UserAchievement> unlocked = achievementMapper.selectByUserId(userId);
+        List<Integer> unlockedIds = unlocked.stream()
+                .map(UserAchievement::getAchievementId)
+                .toList();
+
+        if (allAchievements != null) {
+            for (Achievement achievement : allAchievements) {
+                if (achievement == null || unlockedIds.contains(achievement.getId())) {
+                    continue;
+                }
+
+                boolean shouldUnlock = false;
+                switch (achievement.getConditionType()) {
+                    case 1: // 连续学习天数
+                        shouldUnlock = user.getStreakDays() != null
+                                && user.getStreakDays() >= achievement.getConditionValue();
+                        break;
+                    case 2: // 累计答题
+                        shouldUnlock = user.getTotalQuizCount() != null
+                                && user.getTotalQuizCount() >= achievement.getConditionValue();
+                        break;
+                    case 3: // 累计收藏
+                        shouldUnlock = user.getTotalFavoriteCount() != null
+                                && user.getTotalFavoriteCount() >= achievement.getConditionValue();
+                        break;
+                    case 4: // 答题正确率
+                        if (user.getTotalQuizCount() != null && user.getTotalQuizCount() > 0
+                                && user.getCorrectQuizCount() != null) {
+                            int accuracy = (int) Math.round((user.getCorrectQuizCount() * 100.0) / user.getTotalQuizCount());
+                            shouldUnlock = accuracy >= achievement.getConditionValue();
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+                if (shouldUnlock) {
+                    unlockAchievement(userId, achievement.getId());
+                    log.info("用户解锁成就: userId={}, achievementId={}, name={}",
+                            userId, achievement.getId(), achievement.getName());
+                }
+            }
+        }
     }
 }
 

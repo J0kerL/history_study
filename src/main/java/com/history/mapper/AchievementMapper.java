@@ -37,4 +37,10 @@ public interface AchievementMapper {
      */
     @Select("SELECT * FROM t_achievement ORDER BY condition_type, condition_value")
     java.util.List<com.history.model.entity.Achievement> selectAll();
+
+    /**
+     * 统计用户已解锁的成就数量。
+     */
+    @Select("SELECT COUNT(*) FROM t_user_achievement WHERE user_id = #{userId}")
+    int countByUserId(@Param("userId") long userId);
 }

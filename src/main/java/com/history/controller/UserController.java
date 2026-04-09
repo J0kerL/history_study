@@ -86,6 +86,13 @@ public class UserController {
         return Result.success(pageResult);
     }
 
+    @GetMapping("/achievements/count")
+    @Operation(summary = "获取已解锁成就数量", description = "获取当前登录用户已解锁的成就总数")
+    public Result<Integer> countAchievements() {
+        long id = StpUtil.getLoginIdAsLong();
+        return Result.success(achievementService.countUnlockedAchievements(id));
+    }
+
     @GetMapping("/favorites")
     @Operation(summary = "获取用户收藏列表", description = "分页查询当前登录用户的收藏列表，支持按收藏类型筛选")
     public Result<PageResult<FavoriteVO>> listFavorites(@Valid FavoriteQueryDTO queryDTO) {

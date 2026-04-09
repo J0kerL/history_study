@@ -132,7 +132,7 @@ public class QuizServiceImpl implements QuizService {
         updateUserStats(userId, correct);
 
         // 5. 检查并解锁成就
-        checkAndUnlockAchievements(userId);
+        achievementService.checkAndUnlockAchievements(userId);
 
         return buildAnswerResult(quiz, selectedOptions, isCorrect);
     }
@@ -305,53 +305,6 @@ public class QuizServiceImpl implements QuizService {
         user.setStreakDays(streakDays);
         user.setMaxStreakDays(maxStreakDays);
         userMapper.updateUserQuizStats(userId, totalCount, correctCount, streakDays, maxStreakDays);
-    }
-
-    private void checkAndUnlockAchievements(Long userId) {
-        User user = userMapper.selectById(userId);
-        if (user == null) {
-            return;
-        }
-
-        // 检查所有未解锁成就
-        List<Achievement> allAchievements = achievementMapper.selectAll();
-        // 简化实现：逐个检查条件并解锁
-        List<UserAchievement> unlocked = achievementMapper.selectByUserId(userId);
-        List<Integer> unlockedIds = unlocked.stream()
-                .map(UserAchievement::getAchievementId)
-                .toList();
-
-        if (allAchievements != null) {
-            for (Achievement achievement : allAchievements) {
-                if (achievement == null || unlockedIds.contains(achievement.getId())) {
-                    continue;
-                }
-
-                boolean shouldUnlock = false;
-                switch (achievement.getConditionType()) {
-                    case 1: // 答题总数
-                        shouldUnlock = user.getTotalQuizCount() != null
-                                && user.getTotalQuizCount() >= achievement.getConditionValue();
-                        break;
-                    case 2: // 答对总数
-                        shouldUnlock = user.getCorrectQuizCount() != null
-                                && user.getCorrectQuizCount() >= achievement.getConditionValue();
-                        break;
-                    case 3: // 连续学习天数
-                        shouldUnlock = user.getStreakDays() != null
-                                && user.getStreakDays() >= achievement.getConditionValue();
-                        break;
-                    default:
-                        break;
-                }
-
-                if (shouldUnlock) {
-                    achievementService.unlockAchievement(userId, achievement.getId());
-                    log.info("用户解锁成就: userId={}, achievementId={}, name={}",
-                            userId, achievement.getId(), achievement.getName());
-                }
-            }
-        }
     }
 
     /**
