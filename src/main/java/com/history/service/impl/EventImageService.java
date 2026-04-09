@@ -23,7 +23,7 @@ import java.util.UUID;
 public class EventImageService {
 
     private static final String IMAGE_DIR = "image";
-    private static final String OSS_IMAGE_DIR = "event-cover";
+    private static final String OSS_IMAGE_DIR = "event&people";
 
     @Resource
     private ModelScopeImageClient modelScopeImageClient;

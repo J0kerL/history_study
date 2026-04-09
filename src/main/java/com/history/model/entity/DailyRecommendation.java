@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * 每日推荐实体。
@@ -27,11 +28,14 @@ public class DailyRecommendation implements Serializable {
     private Long id;
 
     @Schema(description = "推荐日期")
-    private LocalDate recDate;
+    private LocalDate recommendDate;
 
-    @Schema(description = "推荐类型：1-事件，2-人物")
-    private Byte type;
+    @Schema(description = "人物ID")
+    private Long contentId;
 
-    @Schema(description = "关联事件或人物ID")
-    private Long refId;
+    @Schema(description = "创建时间")
+    private LocalDateTime createdAt;
+
+    @Schema(description = "更新时间")
+    private LocalDateTime updatedAt;
 }

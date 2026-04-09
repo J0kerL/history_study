@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.history.mapper.DailyRecommendationMapper">
+
+    <resultMap id="BaseResultMap" type="com.history.model.entity.DailyRecommendation">
+        <id column="id" property="id"/>
+        <result column="recommend_date" property="recommendDate"/>
+        <result column="content_id" property="contentId"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <!-- 查询指定日期的推荐记录 -->
+    <select id="selectByDate" resultMap="BaseResultMap">
+        SELECT id, recommend_date, content_id, created_at, updated_at
+        FROM t_daily_recommendation
+        WHERE recommend_date = #{date}
+        LIMIT 1
+    </select>
+
+    <!-- 插入推荐记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_daily_recommendation (
+            recommend_date, content_id
+        ) VALUES (
+            #{recommendDate}, #{contentId}
+        )
+    </insert>
+
+</mapper>

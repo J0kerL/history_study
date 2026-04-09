@@ -9,18 +9,75 @@
         <result column="subtitle" property="subtitle"/>
         <result column="birth_date" property="birthDate"/>
         <result column="death_date" property="deathDate"/>
-        <result column="birthplace" property="birthplace"/>
-        <result column="content" property="content"/>
+        <result column="dynasty" property="dynasty"/>
+        <result column="birth_place" property="birthPlace"/>
+        <result column="biography" property="biography"/>
+        <result column="works" property="works"/>
         <result column="image_url" property="imageUrl"/>
-        <result column="tags" property="tags"/>
-        <result column="status" property="status"/>
-        <result column="source" property="source"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
     </resultMap>
 
     <select id="selectById" resultMap="BaseResultMap">
-        SELECT id, name, subtitle, birth_date, death_date, birthplace, content, image_url, tags, status, source
-        FROM t_figure
+        SELECT id, name, subtitle, birth_date, death_date, dynasty, birth_place, biography, works, image_url, created_at, updated_at
+        FROM t_historical_figure
         WHERE id = #{id}
+    </select>
+
+    <!-- 查询指定日期推荐的人物 -->
+    <select id="selectTodayRecommendation" resultMap="BaseResultMap">
+        SELECT f.id, f.name, f.subtitle, f.birth_date, f.death_date, f.dynasty, f.birth_place, 
+               f.biography, f.works, f.image_url, f.created_at, f.updated_at
+        FROM t_historical_figure f
+        INNER JOIN t_daily_recommendation dr ON f.id = dr.content_id
+        WHERE dr.recommend_date = #{date}
+        LIMIT 1
+    </select>
+
+    <!-- 插入人物记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_historical_figure (
+            name, subtitle, birth_date, death_date, dynasty, birth_place, 
+            biography, works, image_url
+        ) VALUES (
+            #{name}, #{subtitle}, #{birthDate}, #{deathDate}, #{dynasty}, #{birthPlace}, 
+            #{biography}, #{works}, #{imageUrl}
+        )
+    </insert>
+
+    <!-- 查询未推荐过的人物列表 -->
+    <select id="selectUnrecommendedFigures" resultMap="BaseResultMap">
+        SELECT f.id, f.name, f.subtitle, f.birth_date, f.death_date, f.dynasty, f.birth_place, 
+               f.biography, f.works, f.image_url, f.created_at, f.updated_at
+        FROM t_historical_figure f
+        WHERE f.id NOT IN (
+              SELECT dr.content_id 
+              FROM t_daily_recommendation dr 
+          )
+        ORDER BY RAND()
+        LIMIT #{limit}
+    </select>
+
+    <!-- 统计人物总数 -->
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM t_historical_figure
+    </select>
+
+    <!-- 统计未推荐过的人物数量 -->
+    <select id="countUnrecommendedFigures" resultType="int">
+        SELECT COUNT(*) 
+        FROM t_historical_figure f
+        WHERE f.id NOT IN (
+              SELECT dr.content_id 
+              FROM t_daily_recommendation dr 
+          )
+    </select>
+
+    <!-- 查询所有人物 -->
+    <select id="selectAllFigures" resultMap="BaseResultMap">
+        SELECT id, name, subtitle, birth_date, death_date, dynasty, birth_place, 
+               biography, works, image_url, created_at, updated_at
+        FROM t_historical_figure
     </select>
 
 </mapper>

@@ -56,7 +56,7 @@
                 f.image_url AS refImage,
                 f.subtitle AS refSummary
                 FROM t_user_favorite uf
-                INNER JOIN t_figure f ON uf.ref_id = f.id AND uf.type = 2
+                INNER JOIN t_historical_figure f ON uf.ref_id = f.id AND uf.type = 2
                 WHERE uf.user_id = #{userId}
                 AND uf.type = 2
             </when>
@@ -82,7 +82,7 @@
                 f.image_url AS refImage,
                 f.subtitle AS refSummary
                 FROM t_user_favorite uf
-                INNER JOIN t_figure f ON uf.ref_id = f.id AND uf.type = 2
+                INNER JOIN t_historical_figure f ON uf.ref_id = f.id AND uf.type = 2
                 WHERE uf.user_id = #{userId}
                 AND uf.type = 2
             </when>

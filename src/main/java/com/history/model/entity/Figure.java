@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * 历史人物实体。
@@ -22,7 +23,7 @@ public class Figure implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    @Schema(description = "主键ID")
+    @Schema(description = "人物ID")
     private Long id;
 
     @Schema(description = "人物姓名")
@@ -37,21 +38,24 @@ public class Figure implements Serializable {
     @Schema(description = "逝世日期描述")
     private String deathDate;
 
-    @Schema(description = "籍贯或出生地")
-    private String birthplace;
+    @Schema(description = "朝代")
+    private String dynasty;
 
-    @Schema(description = "人物详细内容")
-    private String content;
+    @Schema(description = "籍贯或出生地")
+    private String birthPlace;
 
     @Schema(description = "人物图片地址")
     private String imageUrl;
 
-    @Schema(description = "标签")
-    private String tags;
+    @Schema(description = "人物传记/详细介绍")
+    private String biography;
 
-    @Schema(description = "状态：0-下线，1-正常")
-    private Byte status;
+    @Schema(description = "代表作品（逗号分隔）")
+    private String works;
 
-    @Schema(description = "数据来源：1-人工录入，2-AI生成")
-    private Byte source;
+    @Schema(description = "创建时间")
+    private LocalDateTime createdAt;
+
+    @Schema(description = "更新时间")
+    private LocalDateTime updatedAt;
 }
