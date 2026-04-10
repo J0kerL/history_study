@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.history.mapper.SearchMapper">
+
+    <!-- 全文搜索事件（利用 ft_title_summary ngram 全文索引） -->
+    <select id="searchEvents" resultType="com.history.model.vo.EventSummaryVO">
+        SELECT id, year, title, summary, image_url
+        FROM t_event
+        WHERE MATCH(title, summary) AGAINST(#{keyword} IN BOOLEAN MODE)
+        ORDER BY year ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 模糊搜索人物（name 精确匹配优先，再匹配 subtitle/dynasty） -->
+    <select id="searchFigures" resultType="com.history.model.vo.FigureSearchVO">
+        SELECT id, name, subtitle, dynasty, image_url
+        FROM t_historical_figure
+        WHERE name LIKE CONCAT('%', #{keyword}, '%')
+           OR subtitle LIKE CONCAT('%', #{keyword}, '%')
+           OR dynasty LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY CASE WHEN name = #{keyword} THEN 0 ELSE 1 END, id ASC
+        LIMIT #{limit}
+    </select>
+
+</mapper>
