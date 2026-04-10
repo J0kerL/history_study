@@ -2,7 +2,6 @@ package com.history.service.impl;
 
 import com.history.exception.BusinessException;
 import com.history.llm.LlmClient;
-import com.history.mapper.AchievementMapper;
 import com.history.mapper.QuizMapper;
 import com.history.mapper.UserMapper;
 import com.history.model.entity.*;
@@ -10,7 +9,7 @@ import com.history.model.vo.QuizAnswerResultVO;
 import com.history.model.vo.QuizHistoryVO;
 import com.history.model.vo.QuizStatsVO;
 import com.history.model.vo.TodayQuizVO;
-import com.history.service.AchievementService;
+import com.history.service.LearningRecordService;
 import com.history.service.QuizService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
@@ -41,13 +40,10 @@ public class QuizServiceImpl implements QuizService {
     private UserMapper userMapper;
 
     @Resource
-    private AchievementMapper achievementMapper;
-
-    @Resource
     private LlmClient llmClient;
 
     @Resource
-    private AchievementService achievementService;
+    private LearningRecordService learningRecordService;
 
     @Value("${quiz.generate-on-startup:true}")
     private boolean generateOnStartup;
@@ -73,10 +69,6 @@ public class QuizServiceImpl implements QuizService {
             throw new BusinessException("题目数据异常");
         }
 
-        // 3. 检查用户是否已答
-        UserQuizRecord record = quizMapper.selectUserTodayRecord(userId, today);
-        boolean answered = record != null;
-
         TodayQuizVO vo = new TodayQuizVO();
         vo.setId(quiz.getId());
         vo.setQuestion(quiz.getQuestion());
@@ -86,9 +78,19 @@ public class QuizServiceImpl implements QuizService {
         vo.setOptionC(quiz.getOptionC());
         vo.setOptionD(quiz.getOptionD());
         vo.setDifficulty(quiz.getDifficulty());
+
+        // 3. 未登录用户只返回题目信息
+        if (userId == null) {
+            vo.setAnswered(false);
+            return vo;
+        }
+
+        // 4. 已登录用户检查是否已答
+        UserQuizRecord record = quizMapper.selectUserTodayRecord(userId, today);
+        boolean answered = record != null;
         vo.setAnswered(answered);
 
-        // 4. 若已答，一并返回答题详情，供前端恢复状态
+        // 5. 若已答，一并返回答题详情，供前端恢复状态
         if (answered) {
             vo.setCorrectOptions(quiz.getCorrectOptions());
             vo.setSelectedOptions(record.getSelectedOptions());
@@ -128,17 +130,28 @@ public class QuizServiceImpl implements QuizService {
         record.setAnswerDate(today);
         quizMapper.insertQuizRecord(record);
 
-        // 4. 更新用户学习统计
-        updateUserStats(userId, correct);
+        // 4. 更新用户答题计数（不含 streakDays，由 LearningRecordService 统一管理）
+        updateUserQuizCounts(userId, correct);
 
-        // 5. 检查并解锁成就
-        achievementService.checkAndUnlockAchievements(userId);
+        // 5. 记录学习行为 -> 统一计算 streakDays + 触发成就检查
+        learningRecordService.recordLearningAction(userId, (byte) 3);
 
         return buildAnswerResult(quiz, selectedOptions, isCorrect);
     }
 
     @Override
     public QuizStatsVO getStats(Long userId) {
+        // 未登录返回默认值
+        if (userId == null) {
+            QuizStatsVO vo = new QuizStatsVO();
+            vo.setStreakDays(0);
+            vo.setMaxStreakDays(0);
+            vo.setTotalQuizCount(0);
+            vo.setCorrectQuizCount(0);
+            vo.setAccuracyRate(0.0);
+            return vo;
+        }
+
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
@@ -286,7 +299,7 @@ public class QuizServiceImpl implements QuizService {
         return quiz.getCorrectOptions().equalsIgnoreCase(selectedOptions.toUpperCase().replaceAll("\\s+", ""));
     }
 
-    private void updateUserStats(Long userId, boolean correct) {
+    private void updateUserQuizCounts(Long userId, boolean correct) {
         User user = userMapper.selectById(userId);
         if (user == null) {
             return;
@@ -296,15 +309,8 @@ public class QuizServiceImpl implements QuizService {
         int correctCount = user.getCorrectQuizCount() != null
                 ? (correct ? user.getCorrectQuizCount() + 1 : user.getCorrectQuizCount())
                 : (correct ? 1 : 0);
-        int streakDays = user.getStreakDays() != null ? user.getStreakDays() + 1 : 1;
-        int maxStreakDays = Math.max(streakDays,
-                user.getMaxStreakDays() != null ? user.getMaxStreakDays() : streakDays);
 
-        user.setTotalQuizCount(totalCount);
-        user.setCorrectQuizCount(correctCount);
-        user.setStreakDays(streakDays);
-        user.setMaxStreakDays(maxStreakDays);
-        userMapper.updateUserQuizStats(userId, totalCount, correctCount, streakDays, maxStreakDays);
+        userMapper.updateUserQuizCounts(userId, totalCount, correctCount);
     }
 
     /**

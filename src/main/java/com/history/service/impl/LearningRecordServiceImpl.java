@@ -35,28 +35,29 @@ public class LearningRecordServiceImpl implements LearningRecordService {
 
         // 幂等写入（同一天同一行为只记录一次）
         int rows = learningRecordMapper.insertRecord(userId, today, actionType);
-        if (rows == 0) {
-            // 今日已记录过该行为，无需重复处理
-            return;
+        boolean isNewRecord = rows > 0;
+
+        if (isNewRecord) {
+            log.info("记录学习行为: userId={}, actionType={}, date={}", userId, actionType, today);
         }
 
-        log.info("记录学习行为: userId={}, actionType={}, date={}", userId, actionType, today);
+        // 重新计算连续学习天数（仅新记录时需要）
+        if (isNewRecord) {
+            int streakDays = calculateStreakDays(userId);
 
-        // 重新计算连续学习天数
-        int streakDays = calculateStreakDays(userId);
-
-        // 更新用户表的连续天数
-        User user = userMapper.selectById(userId);
-        if (user != null) {
-            Integer oldStreak = user.getStreakDays();
-            if (oldStreak == null || !oldStreak.equals(streakDays)) {
-                userMapper.updateStreakDays(userId, streakDays);
-                log.info("更新连续学习天数: userId={}, oldStreak={}, newStreak={}",
-                        userId, oldStreak, streakDays);
+            // 更新用户表的连续天数
+            User user = userMapper.selectById(userId);
+            if (user != null) {
+                Integer oldStreak = user.getStreakDays();
+                if (oldStreak == null || !oldStreak.equals(streakDays)) {
+                    userMapper.updateStreakDays(userId, streakDays);
+                    log.info("更新连续学习天数: userId={}, oldStreak={}, newStreak={}",
+                            userId, oldStreak, streakDays);
+                }
             }
         }
 
-        // 检查是否解锁成就
+        // 每次都检查是否解锁成就（同一天重复行为可能导致其他统计变化，如累计收藏数增加）
         achievementService.checkAndUnlockAchievements(userId);
     }
 

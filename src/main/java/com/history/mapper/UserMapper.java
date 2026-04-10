@@ -95,6 +95,19 @@ public interface UserMapper {
                              @Param("maxStreakDays") int maxStreakDays);
 
     /**
+     * 仅更新用户答题计数（不含连续天数，由 LearningRecordService 统一管理）。
+     */
+    @Update("""
+            UPDATE t_user SET
+                total_quiz_count = #{totalQuizCount},
+                correct_quiz_count = #{correctQuizCount}
+            WHERE id = #{id}
+            """)
+    void updateUserQuizCounts(@Param("id") Long id,
+                              @Param("totalQuizCount") int totalQuizCount,
+                              @Param("correctQuizCount") int correctQuizCount);
+
+    /**
      * 更新用户连续学习天数。
      */
     @Update("UPDATE t_user SET streak_days = #{streakDays} WHERE id = #{id}")

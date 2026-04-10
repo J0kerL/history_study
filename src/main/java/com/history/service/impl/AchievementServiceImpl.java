@@ -15,11 +15,11 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * 用户成就 Service 实现类。
@@ -38,68 +38,43 @@ public class AchievementServiceImpl implements AchievementService {
 
     @Override
     public PageResult<Achievement> listAchievements(Long userId, AchievementQueryDTO queryDTO) {
-        // 1. 根据 id 查询用户，校验用户是否存在
+        // 1. 校验用户是否存在
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
 
-        // 2. 开启分页（PageHelper 会自动对接下来的 SQL）
+        // 2. 查询全部成就定义（分页）
         PageHelper.startPage(queryDTO.getPageNum(), queryDTO.getPageSize());
-
-        // 3. 根据用户 ID 查询成就关系（已由 mapper 增加 unlocked_at DESC 排序）
-        List<UserAchievement> userAchievements = achievementMapper.selectByUserId(userId);
-        if (userAchievements == null) {
-            userAchievements = new ArrayList<>();
+        List<Achievement> allAchievements = achievementMapper.selectAll();
+        if (allAchievements == null) {
+            allAchievements = new ArrayList<>();
         }
-        PageInfo<UserAchievement> pageInfo = new PageInfo<>(userAchievements);
+        PageInfo<Achievement> pageInfo = new PageInfo<>(allAchievements);
 
-        if (userAchievements.isEmpty()) {
-            return PageResult.of(pageInfo.getPageNum(), pageInfo.getPageSize(), pageInfo.getTotal(), new ArrayList<>());
-        }
-
-        // 4. 批量查询成就定义，避免 N+1 查询
-        List<Integer> achievementIds = userAchievements.stream()
-                .map(UserAchievement::getAchievementId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList();
-        if (achievementIds.isEmpty()) {
-            return PageResult.of(pageInfo.getPageNum(), pageInfo.getPageSize(), pageInfo.getTotal(), new ArrayList<>());
-        }
-
-        List<Achievement> achievements = achievementMapper.selectByIds(achievementIds);
-        if (achievements == null) {
-            achievements = new ArrayList<>();
-        }
-        Map<Integer, Achievement> achievementById = achievements.stream()
-                .filter(Objects::nonNull)
-                .filter(a -> a.getId() != null)
-                .collect(Collectors.toMap(Achievement::getId, a -> a, (a1, a2) -> a1));
-
-        // 5. 按 user_achievement 的顺序组装成就定义（SQL 已按 unlocked_at DESC 排序）
-        List<Achievement> achievementList = new ArrayList<>(userAchievements.size());
-        for (UserAchievement userAchievement : userAchievements) {
-            if (userAchievement == null) {
-                continue;
+        // 3. 查询用户已解锁成就的映射 achievementId -> unlockedAt
+        List<Map<String, Object>> unlockedMaps = achievementMapper.selectUnlockedMapByUserId(userId);
+        Map<Integer, LocalDateTime> unlockedMap = new HashMap<>();
+        if (unlockedMaps != null) {
+            for (Map<String, Object> row : unlockedMaps) {
+                Object idObj = row.get("achievementId");
+                Object timeObj = row.get("unlockedAt");
+                if (idObj != null && timeObj != null) {
+                    Integer achievementId = ((Number) idObj).intValue();
+                    LocalDateTime unlockedAt = (LocalDateTime) timeObj;
+                    unlockedMap.put(achievementId, unlockedAt);
+                }
             }
-            Integer achievementId = userAchievement.getAchievementId();
-            if (achievementId == null) {
-                throw new BusinessException("成就数据不一致");
-            }
-            Achievement achievement = achievementById.get(achievementId);
-            if (achievement == null || achievement.getName() == null) {
-                throw new BusinessException("成就数据不一致");
-            }
-            achievementList.add(achievement);
         }
 
-        return PageResult.of(
-                pageInfo.getPageNum(),
-                pageInfo.getPageSize(),
-                pageInfo.getTotal(),
-                achievementList
-        );
+        // 4. 填充 unlockedAt 字段
+        for (Achievement achievement : allAchievements) {
+            if (achievement != null && achievement.getId() != null) {
+                achievement.setUnlockedAt(unlockedMap.get(achievement.getId()));
+            }
+        }
+
+        return new PageResult<>(pageInfo);
     }
 
     @Override
@@ -152,8 +127,8 @@ public class AchievementServiceImpl implements AchievementService {
                         shouldUnlock = user.getTotalFavoriteCount() != null
                                 && user.getTotalFavoriteCount() >= achievement.getConditionValue();
                         break;
-                    case 4: // 答题正确率
-                        if (user.getTotalQuizCount() != null && user.getTotalQuizCount() > 0
+                    case 4: // 答题正确率（至少答题10道才参与判定）
+                        if (user.getTotalQuizCount() != null && user.getTotalQuizCount() >= 10
                                 && user.getCorrectQuizCount() != null) {
                             int accuracy = (int) Math.round((user.getCorrectQuizCount() * 100.0) / user.getTotalQuizCount());
                             shouldUnlock = accuracy >= achievement.getConditionValue();
@@ -172,4 +147,3 @@ public class AchievementServiceImpl implements AchievementService {
         }
     }
 }
-

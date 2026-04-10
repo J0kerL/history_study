@@ -33,6 +33,8 @@ public class SaTokenConfig implements WebMvcConfigurer {
                         "/event/todayEvents",
                         "/event/sse/todayEvents",
                         "/event/sse/relatedEvents/**",
+                        "/quiz/today",
+                        "/quiz/stats",
                         "/doc.html",
                         "/swagger-ui.html",
                         "/swagger-ui/**",

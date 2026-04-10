@@ -24,9 +24,10 @@ public class QuizController {
     private QuizService quizService;
 
     @GetMapping("/today")
-    @Operation(summary = "获取每日一题", description = "获取今日题目，不含正确答案和解析")
+    @Operation(summary = "获取每日一题", description = "获取今日题目，不含正确答案和解析。支持匿名访问。")
     public Result<TodayQuizVO> getTodayQuiz() {
-        return Result.success(quizService.getTodayQuiz(StpUtil.getLoginIdAsLong()));
+        Long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
+        return Result.success(quizService.getTodayQuiz(userId));
     }
 
     @PostMapping("/answer")
@@ -38,9 +39,10 @@ public class QuizController {
     }
 
     @GetMapping("/stats")
-    @Operation(summary = "获取学习统计", description = "获取用户连续学习天数、答题正确率等学习统计")
+    @Operation(summary = "获取学习统计", description = "获取用户连续学习天数、答题正确率等学习统计。支持匿名访问，未登录返回默认值。")
     public Result<QuizStatsVO> getStats() {
-        return Result.success(quizService.getStats(StpUtil.getLoginIdAsLong()));
+        Long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
+        return Result.success(quizService.getStats(userId));
     }
 
     @GetMapping("/history")

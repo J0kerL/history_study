@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * 成就定义实体。
@@ -49,4 +50,8 @@ public class Achievement implements Serializable {
     /** 解锁条件值。 */
     @Schema(description = "解锁条件值")
     private Integer conditionValue;
+
+    /** 解锁时间（仅已解锁时有值）。 */
+    @Schema(description = "解锁时间，未解锁时为null")
+    private LocalDateTime unlockedAt;
 }

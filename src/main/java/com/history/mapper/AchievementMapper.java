@@ -6,7 +6,9 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Author Diamond
@@ -43,4 +45,12 @@ public interface AchievementMapper {
      */
     @Select("SELECT COUNT(*) FROM t_user_achievement WHERE user_id = #{userId}")
     int countByUserId(@Param("userId") long userId);
+
+    /**
+     * 查询用户已解锁的成就ID及解锁时间。
+     *
+     * @param userId 用户ID
+     * @return achievementId -> unlockedAt 的映射
+     */
+    List<Map<String, Object>> selectUnlockedMapByUserId(@Param("userId") long userId);
 }

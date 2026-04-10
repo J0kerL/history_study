@@ -41,4 +41,11 @@
         WHERE user_id = #{id}
         ORDER BY unlocked_at DESC
     </select>
+
+    <!-- 查询用户已解锁成就的ID和解锁时间映射 -->
+    <select id="selectUnlockedMapByUserId" resultType="java.util.Map">
+        SELECT achievement_id AS achievementId, unlocked_at AS unlockedAt
+        FROM t_user_achievement
+        WHERE user_id = #{userId}
+    </select>
 </mapper>
