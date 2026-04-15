@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * 用户学习记录 Mapper。
@@ -57,4 +58,21 @@ public interface LearningRecordMapper {
             WHERE user_id = #{userId}
             """)
     LocalDate getLatestLearnDate(@Param("userId") Long userId);
+
+    /**
+     * 批量查询用户最近 N 天的去重学习日期（降序），用于内存计算连续天数。
+     * 取 400 天足以覆盖业务上限（365天连续学习）。
+     *
+     * @param userId 用户ID
+     * @param limit  最多返回条数
+     * @return 学习日期列表（降序）
+     */
+    @Select("""
+            SELECT DISTINCT learn_date
+            FROM t_user_learning_record
+            WHERE user_id = #{userId}
+            ORDER BY learn_date DESC
+            LIMIT #{limit}
+            """)
+    List<LocalDate> selectRecentLearnDates(@Param("userId") Long userId, @Param("limit") int limit);
 }

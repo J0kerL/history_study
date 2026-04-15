@@ -114,8 +114,34 @@ public interface UserMapper {
     void updateStreakDays(@Param("id") Long id, @Param("streakDays") int streakDays);
 
     /**
-     * 更新用户收藏总数。
+     * 更新用户收藏总数（覆盖写，保留兼容）。
      */
     @Update("UPDATE t_user SET total_favorite_count = #{totalFavoriteCount} WHERE id = #{id}")
     void updateTotalFavoriteCount(@Param("id") Long id, @Param("totalFavoriteCount") int totalFavoriteCount);
+
+    /**
+     * 原子递增收藏总数（避免先读后写的并发竞态）。
+     */
+    @Update("UPDATE t_user SET total_favorite_count = total_favorite_count + 1 WHERE id = #{id}")
+    void incrementFavoriteCount(@Param("id") long id);
+
+    /**
+     * 原子递减收藏总数，最低降至 0（避免负数）。
+     */
+    @Update("UPDATE t_user SET total_favorite_count = GREATEST(0, total_favorite_count - 1) WHERE id = #{id}")
+    void decrementFavoriteCount(@Param("id") long id);
+
+    /**
+     * 原子递增答题计数（避免先读后写的并发竞态）。
+     *
+     * @param id              用户主键
+     * @param correctIncrement 正确题计数增量：答对传 1，答错传 0
+     */
+    @Update("""
+            UPDATE t_user
+            SET total_quiz_count   = total_quiz_count + 1,
+                correct_quiz_count = correct_quiz_count + #{correctIncrement}
+            WHERE id = #{id}
+            """)
+    void incrementUserQuizCounts(@Param("id") Long id, @Param("correctIncrement") int correctIncrement);
 }

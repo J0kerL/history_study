@@ -187,6 +187,7 @@ public class AuthServiceImpl implements AuthService {
 
         log.info("手机号 {} 的注册验证码为：{}", phone, verificationCode);
 
+        // 模拟短信发送：将验证码返回给前端展示给用户（生产环境应改为真实短信服务，此字段删除）
         Map<String, Object> result = new HashMap<>();
         result.put("验证码为", verificationCode);
         result.put("过期时间", TimeUnit.MINUTES.toSeconds(VERIFICATION_CODE_EXPIRE_MINUTES));
@@ -298,38 +299,14 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 检查并记录登录学习行为。
-     * 如果今天尚未记录过学习行为，则记录一次登录行为。
+     * 记录登录学习行为。
+     * 连续天数的计算与断签重置统一由 {@link LearningRecordService#recordLearningAction} 处理，
+     * 此处无需重复实现。recordLearningAction 内部已做幂等保护（同一天重复调用无副作用）。
      *
      * @param userId 用户ID
      */
     private void checkAndRecordLoginLearning(Long userId) {
         try {
-            LocalDate today = LocalDate.now();
-            LocalDate yesterday = today.minusDays(1);
-
-            // 检查今天是否已经有学习记录
-            boolean hasTodayRecord = learningRecordService.hasLearningRecord(userId, today);
-            if (hasTodayRecord) {
-                return; // 今日已记录，无需重复
-            }
-
-            // 检查昨天是否有学习记录（判断是否断签）
-            boolean hasYesterdayRecord = learningRecordService.hasLearningRecord(userId, yesterday);
-            if (!hasYesterdayRecord) {
-                // 昨天没学习，检查是否有更早的记录
-                LocalDate latestDate = learningRecordService.getLatestLearnDate(userId);
-                if (latestDate != null && !latestDate.equals(today)) {
-                    // 有历史记录但不是昨天，说明断签了，重置连续天数
-                    User user = userMapper.selectById(userId);
-                    if (user != null && user.getStreakDays() != null && user.getStreakDays() > 0) {
-                        userMapper.updateStreakDays(userId, 0);
-                        log.info("用户断签，重置连续学习天数: userId={}, latestDate={}", userId, latestDate);
-                    }
-                }
-            }
-
-            // 记录今天的登录学习行为
             learningRecordService.recordLearningAction(userId, (byte) 1);
         } catch (Exception e) {
             log.error("记录登录学习行为失败: userId={}", userId, e);

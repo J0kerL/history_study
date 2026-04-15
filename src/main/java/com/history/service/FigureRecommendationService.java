@@ -1,6 +1,7 @@
 package com.history.service;
 
 import com.history.model.vo.DailyRecommendationVO;
+import com.history.model.vo.FigureDetailVO;
 
 /**
  * 每日推荐 Service。
@@ -21,4 +22,9 @@ public interface FigureRecommendationService {
      * @return 实际生成数量
      */
     int generateFiguresBatch(int count);
+
+    /**
+     * 根据 ID 获取人物详情。
+     */
+    FigureDetailVO getFigureDetail(Long id);
 }

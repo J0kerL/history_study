@@ -16,6 +16,13 @@ public interface EventMapper {
 
     int insert(Event event);
 
+    /**
+     * 批量插入事件，并将数据库生成的自增 ID 回写到各实体的 {@code id} 字段。
+     *
+     * @param events 待插入的事件列表
+     */
+    int batchInsert(@Param("events") List<Event> events);
+
     List<Event> selectRecommendationCandidates(@Param("eventId") Long eventId,
                                                @Param("keywords") List<String> keywords,
                                                @Param("limit") int limit);

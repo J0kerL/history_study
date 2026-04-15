@@ -11,14 +11,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 
 /**
  * ModelScope 文生图 API 客户端。
  * 异步提交 → 轮询 → 下载到本地。
+ *
+ * <p>使用 Spring 管理的 {@link RestTemplate} 和 {@link ObjectMapper}，
+ * 统一连接池、超时配置和序列化行为，不再在类内 {@code new} 实例。
  */
 @Slf4j
 @Component
@@ -27,13 +28,18 @@ public class ModelScopeImageClient {
     @Resource
     private ModelScopeImageProperties properties;
 
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    /** 复用 Spring 管理的 RestTemplate（统一超时、连接池配置）。 */
+    @Resource
+    private RestTemplate restTemplate;
+
+    /** 复用 Spring 管理的 ObjectMapper（统一序列化配置）。 */
+    @Resource
+    private ObjectMapper objectMapper;
 
     /**
      * 生成图片并下载到本地目录。
      *
-     * @param prompt 图片描述
+     * @param prompt  图片描述
      * @param saveDir 本地保存目录
      * @return 本地文件路径
      */
@@ -88,7 +94,7 @@ public class ModelScopeImageClient {
     }
 
     /**
-     * 轮询任务状态，直到完成。
+     * 轮询任务状态，直到完成或超时。
      */
     private String pollTask(String taskId) {
         String url = properties.getBaseUrl() + "/v1/tasks/" + taskId;
@@ -107,16 +113,13 @@ public class ModelScopeImageClient {
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + properties.getApiKey());
             headers.set("X-ModelScope-Task-Type", "image_generation");
-
             HttpEntity<Void> request = new HttpEntity<>(headers);
 
             try {
                 ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
                 JsonNode root = objectMapper.readTree(response.getBody());
 
-                // task_status: PROCESSING → SUCCEED / FAILED
                 String status = root.path("task_status").asText();
-
                 if ("SUCCEED".equals(status)) {
                     return extractImageUrl(root);
                 } else if ("FAILED".equals(status)) {
@@ -136,57 +139,41 @@ public class ModelScopeImageClient {
 
     /**
      * 从任务结果中提取图片 URL。
-     * 实际响应格式: {"task_status":"SUCCEED", "output_images":["https://..."]}
      */
     private String extractImageUrl(JsonNode root) {
-        // 直接取根节点的 output_images
         if (root.has("output_images") && root.get("output_images").isArray()) {
             JsonNode images = root.get("output_images");
-            if (images.size() > 0) {
+            if (!images.isEmpty()) {
                 return resolveUrlField(images.get(0));
             }
         }
-
-        // 兼容 output.images[0] 格式
         JsonNode output = root.get("output");
         if (output != null) {
             if (output.has("images") && output.get("images").isArray()) {
                 JsonNode images = output.get("images");
-                if (images.size() > 0) {
-                    return resolveUrlField(images.get(0));
-                }
+                if (!images.isEmpty()) return resolveUrlField(images.get(0));
             }
             if (output.has("output_images") && output.get("output_images").isArray()) {
                 JsonNode images = output.get("output_images");
-                if (images.size() > 0) {
-                    return resolveUrlField(images.get(0));
-                }
+                if (!images.isEmpty()) return resolveUrlField(images.get(0));
             }
         }
-
         throw new BusinessException("图像生成成功但无法解析返回结果: " + root);
     }
 
     private String resolveUrlField(JsonNode node) {
-        if (node == null) {
-            return null;
-        }
-        if (node.isTextual()) {
-            return node.asText();
-        }
+        if (node == null) return null;
+        if (node.isTextual()) return node.asText();
         if (node.isObject()) {
-            if (node.has("url")) {
-                return node.get("url").asText();
-            }
-            if (node.has("path")) {
-                return node.get("path").asText();
-            }
+            if (node.has("url")) return node.get("url").asText();
+            if (node.has("path")) return node.get("path").asText();
         }
         return null;
     }
 
     /**
      * 从远程 URL 下载图片到本地目录。
+     * 使用 Spring 管理的 {@link RestTemplate}，超时由 Bean 统一配置，不再硬编码。
      */
     private Path downloadImage(String imageUrl, Path saveDir) {
         try {
@@ -197,15 +184,17 @@ public class ModelScopeImageClient {
             String filename = System.currentTimeMillis() + ".webp";
             Path targetPath = saveDir.resolve(filename);
 
-            var connection = URI.create(imageUrl).toURL().openConnection();
-            connection.setConnectTimeout(10000);
-            connection.setReadTimeout(30000);
-            try (var stream = connection.getInputStream()) {
-                Files.copy(stream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            ResponseEntity<byte[]> response = restTemplate.getForEntity(imageUrl, byte[].class);
+            byte[] imageBytes = response.getBody();
+            if (imageBytes == null || imageBytes.length == 0) {
+                throw new BusinessException("下载图片失败：响应体为空");
             }
+            Files.write(targetPath, imageBytes);
 
             log.info("图片下载完成: {}", targetPath);
             return targetPath;
+        } catch (BusinessException e) {
+            throw e;
         } catch (IOException e) {
             throw new BusinessException("下载图片失败: " + e.getMessage());
         }

@@ -37,8 +37,8 @@ public class EventAiAsyncService {
     private static final int RELATED_CANDIDATE_FALLBACK_LIMIT = 10;
     private static final int SUMMARY_MAX_LENGTH = 40;
     private static final int CONTENT_MIN_LENGTH = 200;
-    private static final short CHINESE_HISTORY_START_YEAR = -2070;
-    private static final short CHINESE_HISTORY_END_YEAR = 1911;
+    private static final int CHINESE_HISTORY_START_YEAR = -2070;
+    private static final int CHINESE_HISTORY_END_YEAR = 1911;
 
     private final Set<String> todayGenerationKeys = ConcurrentHashMap.newKeySet();
     private final Set<Long> relatedGenerationKeys = ConcurrentHashMap.newKeySet();
@@ -151,17 +151,17 @@ public class EventAiAsyncService {
             return false;
         }
 
-        for (Event event : validEvents.values()) {
-            eventMapper.insert(event);
-        }
-        log.info("今日事件落库完成: month={}, day={}, savedCount={}", month, day, validEvents.size());
+        // 批量 INSERT，减少数据库 round-trip，MyBatis 会将自增 ID 回写到各实体
+        List<Event> eventsToSave = new ArrayList<>(validEvents.values());
+        eventMapper.batchInsert(eventsToSave);
+        log.info("今日事件落库完成: month={}, day={}, savedCount={}", month, day, eventsToSave.size());
 
-        // 异步生成封面图片，不阻塞事件返回
-        generateEventImagesAsync(validEvents.values().stream().toList());
+        // 异步生成封面图片，不阻塞事件返回（运行在 imageTaskExecutor 线程池）
+        generateEventImagesAsync(eventsToSave);
         return true;
     }
 
-    @Async("eventAiTaskExecutor")
+    @Async("imageTaskExecutor")
     public void generateEventImagesAsync(List<Event> events) {
         if (events == null || events.isEmpty()) {
             return;
@@ -393,11 +393,13 @@ public class EventAiAsyncService {
                 + CHINESE_HISTORY_START_YEAR + " 到 " + CHINESE_HISTORY_END_YEAR + " 之间。"
                 + "禁止生成中国近现代史、当代史、世界史或外国历史事件。"
                 + "请使用客观、中性、百科式表述，不要渲染冲突细节。"
+                + "事件必须是\"高知名度\"历史事件，必须真实，不要生成过于细碎的地方性事件、小规模冲突、鲜为人知的人物生卒、某个年号变更、官员任免等行政琐事、缺乏历史影响力的日常事件。"
+                + "具体方向参考（仅举例，不限于这些）：朝代建立与灭亡、重大战役（如长平之战、赤壁之战、淝水之战）、重要变法改革（商鞅变法、王安石变法）、制度创立（科举制、郡县制、行省制）、文化工程（编纂《永乐大典》、《四库全书》）、工程壮举（大运河修建、长城修筑）、重要外交与和亲（张骞出使西域、昭君出塞）、著名盛世与乱世、农民起义（陈胜吴广、黄巾、黄巢、李自成）、重要思想文化事件（焚书坑儒、独尊儒术）、经济商业里程碑（郑和下西洋、丝绸之路开通）等。"
                 + "必须返回严格 JSON，字段结构为 {\"events\":[{\"title\":\"\",\"year\":0,\"summary\":\"\",\"content\":\"\",\"tags\":\"标签1,标签2\",\"imagePrompt\":\"用于文生图模型生成配图的详细画面描述\"}]}。"
-                + "一次生成 5 条，不要输出 Markdown，不要输出解释。"
+                + "一次生成 5 条，不要输出Markdown，不要输出解释。"
                 + "summary 必须是 25 到 40 字的中文摘要。"
                 + "content 必须是可直接展示的详细中文正文，长度至少 300 字，详细说明背景、时间、人物、经过和历史影响。"
-                + "同一天的 5 条事件必须彼此不同，标题不能重复，尽量覆盖不同朝代。"
+                + "同一天的 5 条事件必须彼此不同，标题不能重复，覆盖不同朝代。"
                 + "所有字段值里都不要出现 ASCII 英文双引号，若需要引用，请改用中文引号或直接改写。"
                 + "tags 使用英文逗号分隔，并体现中国历史时期，如夏朝、商朝、西周、东周、春秋、战国、秦朝、汉朝、三国、晋朝、南北朝、隋朝、唐朝、宋朝、元朝、明朝、清朝、晚清等。"
                 + "imagePrompt 是一段详细的中文画面描述，用于文生图模型生成与该历史事件匹配的插画。要求包含场景、人物、服饰、建筑、色彩氛围、时代特征等视觉元素，风格指定为中国传统水墨或国风插画。每条约 60-120 字。";

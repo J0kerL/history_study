@@ -10,6 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * 用户学习记录 Service 实现类。
@@ -63,28 +66,20 @@ public class LearningRecordServiceImpl implements LearningRecordService {
 
     @Override
     public int calculateStreakDays(Long userId) {
-        // 从昨天开始往前数（因为今天可能还没学习）
-        LocalDate today = LocalDate.now();
-        LocalDate yesterday = today.minusDays(1);
-        int streak = 0;
-        LocalDate checkDate = yesterday;
+        // 一次查询获取最近 400 天的学习日期（足以覆盖 365 天上限），放入 Set 供 O(1) 查找
+        List<LocalDate> recentDates = learningRecordMapper.selectRecentLearnDates(userId, 400);
+        if (recentDates.isEmpty()) {
+            return 0;
+        }
+        Set<LocalDate> dateSet = new HashSet<>(recentDates);
 
-        // 最多检查 365 天（防止死循环）
-        while (streak < 365) {
-            boolean hasLearned = learningRecordMapper.hasLearningRecord(userId, checkDate);
-            if (!hasLearned) {
-                break;
-            }
+        // 从今天开始往前连续累计（无论今天是否已学，统一逻辑）
+        LocalDate checkDate = LocalDate.now();
+        int streak = 0;
+        while (dateSet.contains(checkDate)) {
             streak++;
             checkDate = checkDate.minusDays(1);
         }
-
-        // 如果今天已经学习了，+1
-        boolean hasTodayRecord = learningRecordMapper.hasLearningRecord(userId, today);
-        if (hasTodayRecord) {
-            streak++;
-        }
-
         return streak;
     }
 

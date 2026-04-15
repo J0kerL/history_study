@@ -192,9 +192,9 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public int generateQuizBatch(int count) {
         int unusedCount = quizMapper.countUnusedQuiz();
-        if (unusedCount < 20) {
-            int toGenerate = 100 - unusedCount;
-            log.info("未使用题目仅剩 {} 道，开始批量生成 {} 道", unusedCount, toGenerate);
+        if (unusedCount < count) {
+            int toGenerate = count - unusedCount;
+            log.info("未使用题目仅剩 {} 道，目标 {} 道，开始批量生成 {} 道", unusedCount, count, toGenerate);
             List<Quiz> allGenerated = new ArrayList<>();
             int batchSize = 10;
             int batches = (toGenerate + batchSize - 1) / batchSize;
@@ -225,7 +225,7 @@ public class QuizServiceImpl implements QuizService {
             log.info("题库批量生成完成，共落库 {} 道题", allGenerated.size());
             return allGenerated.size();
         }
-        log.info("未使用题目已有 {} 道，跳过自动生成。", unusedCount);
+        log.info("未使用题目已有 {} 道（目标 {}），跳过自动生成。", unusedCount, count);
         return 0;
     }
 
@@ -300,17 +300,8 @@ public class QuizServiceImpl implements QuizService {
     }
 
     private void updateUserQuizCounts(Long userId, boolean correct) {
-        User user = userMapper.selectById(userId);
-        if (user == null) {
-            return;
-        }
-
-        int totalCount = user.getTotalQuizCount() != null ? user.getTotalQuizCount() + 1 : 1;
-        int correctCount = user.getCorrectQuizCount() != null
-                ? (correct ? user.getCorrectQuizCount() + 1 : user.getCorrectQuizCount())
-                : (correct ? 1 : 0);
-
-        userMapper.updateUserQuizCounts(userId, totalCount, correctCount);
+        // 原子 SQL 递增，避免先读后写的并发 lost-update
+        userMapper.incrementUserQuizCounts(userId, correct ? 1 : 0);
     }
 
     /**

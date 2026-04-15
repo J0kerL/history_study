@@ -17,6 +17,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import org.springframework.context.annotation.Lazy;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,6 +59,11 @@ public class FigureRecommendationServiceImpl implements FigureRecommendationServ
     @Resource
     private OssService ossService;
 
+    /** 使用 @Lazy 避免循环依赖，通过 Spring 代理调用以触发 @Async 切面。 */
+    @Lazy
+    @Resource
+    private FigureAsyncService figureAsyncService;
+
     @Override
     public DailyRecommendationVO getTodayRecommendation() {
         LocalDate today = LocalDate.now();
@@ -91,19 +97,12 @@ public class FigureRecommendationServiceImpl implements FigureRecommendationServ
             Figure figure = candidates.get(0);
             recommendation = saveRecommendation(today, figure);
             
-            // 检查未推荐人物库存是否低于阈值，如是则异步补充
+            // 检查未推荐人物库存是否低于阈值，如是则异步补充（使用线程池，避免裸 new Thread）
             int unrecommendedCount = figureMapper.countUnrecommendedFigures();
             if (unrecommendedCount < FIGURE_INVENTORY_THRESHOLD) {
-                log.info("未推荐人物库存不足（剩余{}，阈值{}），异步批量生成{}个", 
-                    unrecommendedCount, FIGURE_INVENTORY_THRESHOLD, BATCH_GENERATE_COUNT);
-                // 异步生成，不阻塞当前请求
-                new Thread(() -> {
-                    try {
-                        generateFiguresBatch(BATCH_GENERATE_COUNT);
-                    } catch (Exception e) {
-                        log.error("异步生成人物失败", e);
-                    }
-                }, "figure-replenish-thread").start();
+                log.info("未推荐人物库存不足（剩余{}，阈值{}），异步批量生成{}个",
+                        unrecommendedCount, FIGURE_INVENTORY_THRESHOLD, BATCH_GENERATE_COUNT);
+                figureAsyncService.replenishFiguresAsync(BATCH_GENERATE_COUNT);
             }
         }
 
@@ -142,6 +141,15 @@ public class FigureRecommendationServiceImpl implements FigureRecommendationServ
         }
 
         return successCount.get();
+    }
+
+    @Override
+    public FigureDetailVO getFigureDetail(Long id) {
+        Figure figure = figureMapper.selectById(id);
+        if (figure == null) {
+            throw new BusinessException("人物不存在");
+        }
+        return buildFigureDetailVO(figure);
     }
 
     /**
@@ -320,22 +328,38 @@ public class FigureRecommendationServiceImpl implements FigureRecommendationServ
             throw new BusinessException("人物数据异常");
         }
 
+        DailyRecommendationVO vo = new DailyRecommendationVO();
+        vo.setRecommendDate(recommendation.getRecommendDate().toString());
+        vo.setFigure(buildFigureDetailVO(figure));
+
+        return vo;
+    }
+
+    private FigureDetailVO buildFigureDetailVO(Figure figure) {
         FigureDetailVO figureVO = new FigureDetailVO();
         figureVO.setId(figure.getId());
         figureVO.setName(figure.getName());
         figureVO.setSubtitle(figure.getSubtitle());
-        figureVO.setTimeRange(figure.getBirthDate() + " — " + figure.getDeathDate());
+        figureVO.setTimeRange(buildTimeRange(figure.getBirthDate(), figure.getDeathDate()));
         figureVO.setBirthPlace(figure.getBirthPlace());
         figureVO.setDynasty(figure.getDynasty());
         figureVO.setImageUrl(figure.getImageUrl());
         figureVO.setBiography(figure.getBiography());
         figureVO.setWorks(figure.getWorks());
         figureVO.setRecommendReason(extractDynastyFromSubtitle(figure.getSubtitle()));
+        return figureVO;
+    }
 
-        DailyRecommendationVO vo = new DailyRecommendationVO();
-        vo.setRecommendDate(recommendation.getRecommendDate().toString());
-        vo.setFigure(figureVO);
-
-        return vo;
+    private String buildTimeRange(String birthDate, String deathDate) {
+        if (StrUtil.isBlank(birthDate) && StrUtil.isBlank(deathDate)) {
+            return "";
+        }
+        if (StrUtil.isBlank(deathDate)) {
+            return birthDate;
+        }
+        if (StrUtil.isBlank(birthDate)) {
+            return deathDate;
+        }
+        return birthDate + " — " + deathDate;
     }
 }

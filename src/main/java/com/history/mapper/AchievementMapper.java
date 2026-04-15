@@ -29,9 +29,9 @@ public interface AchievementMapper {
     List<UserAchievement> selectByUserId(long id);
 
     /**
-     * 插入用户成就解锁记录。
+     * 插入用户成就解锁记录（INSERT IGNORE 保证幂等，无需应用层预查重）。
      */
-    @Insert("INSERT INTO t_user_achievement (user_id, achievement_id, unlocked_at) VALUES (#{userId}, #{achievementId}, NOW())")
+    @Insert("INSERT IGNORE INTO t_user_achievement (user_id, achievement_id, unlocked_at) VALUES (#{userId}, #{achievementId}, NOW())")
     int insertUserAchievement(@Param("userId") Long userId, @Param("achievementId") Integer achievementId);
 
     /**

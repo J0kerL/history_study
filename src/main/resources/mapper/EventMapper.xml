@@ -48,6 +48,19 @@
         LIMIT 3
     </select>
 
+    <!--
+        批量插入事件，useGeneratedKeys + keyProperty 配合 MyBatis 3.3+
+        将数据库生成的自增 ID 回写到每个实体的 id 字段，供后续图片 URL 更新使用。
+    -->
+    <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id" parameterType="java.util.List">
+        INSERT INTO t_event (title, year, month, day, summary, content, image_url, tags, source)
+        VALUES
+        <foreach collection="events" item="event" separator=",">
+            (#{event.title}, #{event.year}, #{event.month}, #{event.day},
+             #{event.summary}, #{event.content}, #{event.imageUrl}, #{event.tags}, #{event.source})
+        </foreach>
+    </insert>
+
     <insert id="insert" parameterType="com.history.model.entity.Event" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO t_event (
             title,

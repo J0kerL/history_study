@@ -18,6 +18,7 @@ import com.history.service.LearningRecordService;
 import jakarta.annotation.Resource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -59,6 +60,7 @@ public class FavoriteServiceImpl implements FavoriteService {
      * 添加收藏。
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void addFavorite(FavoriteDTO favoriteDTO) {
         long userId = StpUtil.getLoginIdAsLong();
         Integer type = favoriteDTO.getType();
@@ -72,9 +74,8 @@ public class FavoriteServiceImpl implements FavoriteService {
             throw new BusinessException("请勿重复收藏");
         }
 
-        // 更新用户收藏总数
-        int newCount = favoriteMapper.countByUserId(userId);
-        userMapper.updateTotalFavoriteCount(userId, newCount);
+        // 原子递增收藏总数，避免先读后写的并发竞态
+        userMapper.incrementFavoriteCount(userId);
 
         // 记录学习行为（收藏）
         learningRecordService.recordLearningAction(userId, (byte) 4);
@@ -84,6 +85,7 @@ public class FavoriteServiceImpl implements FavoriteService {
      * 取消收藏。
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void removeFavorite(FavoriteDTO favoriteDTO) {
         long userId = StpUtil.getLoginIdAsLong();
         Integer type = favoriteDTO.getType();
@@ -93,6 +95,9 @@ public class FavoriteServiceImpl implements FavoriteService {
         if (affectedRows == 0) {
             throw new BusinessException("收藏记录不存在");
         }
+
+        // 原子递减收藏总数（最低降至 0）
+        userMapper.decrementFavoriteCount(userId);
     }
 
     /**
@@ -115,6 +120,7 @@ public class FavoriteServiceImpl implements FavoriteService {
      * 3. 当前状态与目标状态一致时，不重复写库。
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean setFavoriteStatus(SetFavoriteStatusDTO setFavoriteStatusDTO) {
         long userId = StpUtil.getLoginIdAsLong();
         Integer type = setFavoriteStatusDTO.getType();
@@ -133,18 +139,18 @@ public class FavoriteServiceImpl implements FavoriteService {
             } catch (DuplicateKeyException e) {
                 return true;
             }
-            // 更新用户收藏总数
-            int newCount = favoriteMapper.countByUserId(userId);
-            userMapper.updateTotalFavoriteCount(userId, newCount);
+            // 原子递增收藏总数
+            userMapper.incrementFavoriteCount(userId);
             // 记录学习行为（收藏）
             learningRecordService.recordLearningAction(userId, (byte) 4);
             return true;
         }
 
-        favoriteMapper.deleteFavorite(userId, type, refId);
-        // 更新用户收藏总数
-        int newCount = favoriteMapper.countByUserId(userId);
-        userMapper.updateTotalFavoriteCount(userId, newCount);
+        int affected = favoriteMapper.deleteFavorite(userId, type, refId);
+        if (affected > 0) {
+            // 原子递减收藏总数
+            userMapper.decrementFavoriteCount(userId);
+        }
         return false;
     }
 
